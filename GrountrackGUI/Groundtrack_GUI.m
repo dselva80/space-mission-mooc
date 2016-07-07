@@ -338,7 +338,9 @@ function Groundtrack_GUI
             lon1 = min(circle_lon);
             lon2 = max(circle_lon);
             worldmap([lat1 lat2],[lon1 lon2]);
-            load topo.mat topolegend topo;
+            dat = load('topo.mat');
+            topolegend = dat.topolegend;
+            topo = dat.topo;
 %             geoshow(A,R)
             geoshow(topo,topolegend,'DisplayType','texturemap');
             if swath_running==1
