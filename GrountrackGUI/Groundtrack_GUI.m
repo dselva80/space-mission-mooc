@@ -200,7 +200,6 @@ function Groundtrack_GUI
     if button_state == hObject.Max
         hanim.String = 'Stop';
         swath_running=0;
-       
         % h represents satellite
         if been_here == 1
             delete(data_g);
@@ -326,6 +325,7 @@ function Groundtrack_GUI
             delete(hsat);
             hsat = plot3m(lat(stop), lon(stop), alt(stop),...
                 'Marker','o','MarkerFaceColor','k');
+           
             
             % plot circular swath on globe
             delete(circ_swath_globe);
@@ -346,43 +346,81 @@ function Groundtrack_GUI
                 circ_rows(p)=r1;
                 circ_cols(p)=c1;
             end
+            
+            
            
             %creates image to be displayed by swath
-            [ A ] = flat_swath( circ_rows,circ_cols,latg(stop),r );
+            [ A ] = flat_swath( circ_rows,circ_cols,latg(stop),r,180,360 );
+            
             
             % changing tick and axis values on swath
-            image(flip(A),'CDataMapping','scaled')
-            hswath.XTick=[0 4.5 9];
-            hswath.YTick=[0 4.5 9];
+            image(flip(A),'CDataMapping','scaled');
+            demcmap(topo)
+            
+            hold on
+            xlimits = xlim;
+            x1 = xlimits(1);
+            x2 = x1+(xlimits(2)-xlimits(1))/2;
+            x3 = xlimits(2);
+            ylimits = ylim;
+            y1 = ylimits(1);
+            y2 = y1+(ylimits(2)-ylimits(1))/2;
+            y3 = ylimits(2);
+            hswath.XTick=[x1 x2 x3];
+            hswath.YTick=[y1 y2 y3];
             lattext = strcat(num2str(round(latg(stop))),'{\circ}');
+            lat1 = round(latg(stop)-r);
+            if lat1<-90
+                lat1 = lat1+180;
+            end
+            lat3 = round(latg(stop)+r);
+            if lat3>90
+                lat3 =180-lat3;
+            end
+            lat1text = strcat(num2str(lat1),'{\circ}');
+            lat3text = strcat(num2str(lat3),'{\circ}');
+            
+            
             lontext = strcat(num2str(round(long(stop))),'{\circ}');
-            hswath.YTickLabel = {'',lattext,''};        
-            hswath.XTickLabel = {'',lontext,''}; 
+            lon1 = round(long(stop)-r);
+            if lon1<-180
+                lon1 = lon1+360;
+            end
+            lon3 = round(long(stop)+r);
+            if lon3>180
+                lon3 =360-lon3;
+            end
+            lon1text = strcat(num2str(lon1),'{\circ}');
+            lon3text = strcat(num2str(lon3),'{\circ}');
+            hswath.YTickLabel = {lat3text,lattext,lat1text};        
+            hswath.XTickLabel = {lon1text,lontext,lon3text}; 
+            
             
             if swath_running==1
                 delete(circ_swath);
                 delete(diam);
                 delete(diamtext);
             end
-            hold on
             
             %plot circular swath on flat swath
             ang=0:0.1:2*pi+.1; 
-            xp=4*cos(ang);
-            yp=4*sin(ang);
-            circ_swath = plot(4.5+xp,4.5+yp,'y','LineWidth',4);
+            xp=(x2-x1)*cos(ang);
+            yp=(y2-y1)*sin(ang);
+            circ_swath = plot(x2+xp,y2+yp,'y','LineWidth',4);
             % plot title
             swath_text.Position = [thirdw+1.9*tenthw,tenthh*7,200,30];
             swath_text.Visible = 'on';
             % plot diameter and diameter text
-            xdiam =0:1:9;
-            ydiam = ones(size(xdiam))*4.5;
+            xdiam = x1:1:x3;
+            ydiam = ones(size(xdiam))*y2;
             diam = plot(xdiam,ydiam,'y','LineWidth',3);
             str = strcat(num2str(round(abs(locx))),' km');
-            diamtext = text(5,4,str,'Color','y','FontSize',15);
+            diamtext = text(x2+x2/4,y2+y2/8,str,'Color','y','FontSize',15);
+            hold off
             
             swath_running = 1;
         end
+        
         
        elseif button_state == hObject.Min
          hanim.String = 'Animate';

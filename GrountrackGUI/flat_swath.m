@@ -1,4 +1,4 @@
-function [ A ] = flat_swath( circ_rows,circ_cols,latg,r )
+function [ A, mincol, maxcol, minrow, maxrow ] = flat_swath( circ_rows,circ_cols,latg,r,height,width )
 % OUTPUTS
 % A where A is an image
 
@@ -29,7 +29,7 @@ if latg+r >= 90
     % half
     bottom_rows = circ_rows(quart+1:tf);
     top_rows = cat(1,circ_rows(1:quart),circ_rows(tf+1:end));
-    top_rows=top_rows+(180-top_rows).*2;
+    top_rows=top_rows+(height-top_rows).*2;
 
     
     % This is where I fudged it. It's not too noticeable at small (<50 FOV)
@@ -39,7 +39,7 @@ if latg+r >= 90
     minrow=min(bottom_rows);
     maxrow=max(top_rows);
     
-    mincol=150;
+    mincol=.4*width;
     maxcol=mincol+maxrow-minrow;
 
 
@@ -52,13 +52,13 @@ if latg+r >= 90
     % at south pole
      bottom_rows = circ_rows(quart+1:tf);
     top_rows = cat(1,circ_rows(1:quart),circ_rows(tf+1:end));
-    bottom_rows = bottom_rows+180;
-    top_rows = top_rows+180;
+    bottom_rows = bottom_rows+height;
+    top_rows = top_rows+height;
 
     
     
-    mincol=150;
-    maxcol=200;
+    mincol=round(width*.4);
+    maxcol=round(width*.55);
     minrow=min(bottom_rows);
     maxrow=max(top_rows);
 
@@ -66,20 +66,21 @@ if latg+r >= 90
     im = cat(1,flip(topo,1),fliplr(topo));
 
     A = im(minrow:maxrow,mincol:maxcol);
- elseif maxcol-mincol > 350
+    
+ elseif maxcol-mincol > width-10
     % at prime meridian must loop longitude
 
     beg_cols = zeros(size(circ_cols));
     end_cols = zeros(size(circ_cols));
     % split circular cols into two different arrays
     for q = 1:length(circ_cols)
-        if circ_cols(q) < 180
+        if circ_cols(q) < height
             beg_cols(q) = circ_cols(q);
         else
             end_cols(q) = circ_cols(q);
         end
     end
-    beg_cols=beg_cols(beg_cols~=0)+360;
+    beg_cols=beg_cols(beg_cols~=0)+width;
     end_cols=end_cols(end_cols~=0);
 
     maxcol = max(beg_cols);
