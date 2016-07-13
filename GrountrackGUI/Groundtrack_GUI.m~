@@ -342,6 +342,12 @@ function Groundtrack_GUI
             quart = round(length(circle_lon)/4);
             half = round(length(circle_lon)/2);
             tf = quart+half;
+%             
+%             lat1 = round(min(circle_lat));
+%             lat2 = round(max(circle_lat));
+%             lon1 = round(min(circle_lon));
+%             lon2 = round(max(circle_lon));
+            
             
             circ_rows = zeros(size(circle_lat));
             circ_cols = zeros(size(circle_lat));
@@ -358,6 +364,8 @@ function Groundtrack_GUI
             
             
             image(flip(A),'CDataMapping','scaled')
+            midc=round(minc+(maxc-minc)/2);
+            midr=round(minr+(maxr-minr)/2);
             hswath.XTick=[0 4.5 9];
             hswath.YTick=[0 4.5 9];
             lattext = strcat(num2str(round(latg(stop))),'{\circ}');
@@ -380,16 +388,16 @@ function Groundtrack_GUI
             ang=0:0.1:2*pi+.1; 
             xp=4*cos(ang);
             yp=4*sin(ang);
-            circ_swath = plot(4.5+xp,4.5+yp,'y','LineWidth',4);
+            circ_swath = plot(4.5+xp,4.5+yp,'y','LineWidth',3);
             swath_text.Position = [thirdw+1.9*tenthw,tenthh*7,200,30];
             swath_text.Visible = 'on';
             
             
-            xdiam =0:1:9;
-            ydiam = ones(size(xdiam))*4.5;
-            diam = plot(xdiam,ydiam,'y','LineWidth',3);
+%             latscale = [circle_lat(quart+1) circle_lat(tf)];
+%             lonscale = [circle_lon(quart+1) circle_lon(tf)];
+            diam = plot(0:1:9, 4.5,'y','LineWidth',3);
             str = strcat(num2str(round(abs(locx))),' km');
-            diamtext = text(5,4,str,'Color','y','FontSize',15);
+            diamtext = text(long(stop),latg(stop)+.5,str,'Color','y','FontSize',15);
             
             swath_running = 1;
             
