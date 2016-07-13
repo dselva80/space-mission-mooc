@@ -336,13 +336,9 @@ function Groundtrack_GUI
             
             %%%%%%% flat map of swath
             axes(hswath)
-            
             hswath.Visible = 'on' ;
             
-            quart = round(length(circle_lon)/4);
-            half = round(length(circle_lon)/2);
-            tf = quart+half;
-            
+            % converts lat and lon of swath to rows and cols of pixels
             circ_rows = zeros(size(circle_lat));
             circ_cols = zeros(size(circle_lat));
             for p=1:length(circle_lat)
@@ -351,12 +347,10 @@ function Groundtrack_GUI
                 circ_cols(p)=c1;
             end
            
+            %creates image to be displayed by swath
+            [ A ] = flat_swath( circ_rows,circ_cols,latg(stop),r );
             
-            [ A, minc, maxc, minr, maxr ] = flat_swath( circ_rows,circ_cols,latg(stop),r );
-            
-            
-            
-            
+            % changing tick and axis values on swath
             image(flip(A),'CDataMapping','scaled')
             hswath.XTick=[0 4.5 9];
             hswath.YTick=[0 4.5 9];
@@ -364,10 +358,6 @@ function Groundtrack_GUI
             lontext = strcat(num2str(round(long(stop))),'{\circ}');
             hswath.YTickLabel = {'',lattext,''};        
             hswath.XTickLabel = {'',lontext,''}; 
-            
-            
-            
-%             axis tight;
             
             if swath_running==1
                 delete(circ_swath);
@@ -381,10 +371,10 @@ function Groundtrack_GUI
             xp=4*cos(ang);
             yp=4*sin(ang);
             circ_swath = plot(4.5+xp,4.5+yp,'y','LineWidth',4);
+            % plot title
             swath_text.Position = [thirdw+1.9*tenthw,tenthh*7,200,30];
             swath_text.Visible = 'on';
-            
-            
+            % plot diameter and diameter text
             xdiam =0:1:9;
             ydiam = ones(size(xdiam))*4.5;
             diam = plot(xdiam,ydiam,'y','LineWidth',3);
@@ -392,8 +382,6 @@ function Groundtrack_GUI
             diamtext = text(5,4,str,'Color','y','FontSize',15);
             
             swath_running = 1;
-            
-            
         end
         
        elseif button_state == hObject.Min

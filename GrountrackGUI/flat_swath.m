@@ -1,10 +1,9 @@
-function [ A,mincol, maxcol, minrow, maxrow ] = flat_swath( circ_rows,circ_cols,latg,r )
+function [ A ] = flat_swath( circ_rows,circ_cols,latg,r )
 % OUTPUTS
 % A where A is an image
 
 % load iamge data
 dat = load('topo.mat');
-topolegend = dat.topolegend;
 topo = dat.topo;
 
 % set up some indexes in circle lon and circle lat
