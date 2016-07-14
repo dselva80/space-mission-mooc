@@ -527,14 +527,13 @@ function Swath_GUI
             
            
             % creates image to be displayed by swath
-            cmap = hgeo.CData;
-            
-            [B] = flat_swath( circ_rows,circ_cols,latg(stop),r,256,512,A );
+            cmap_whole = hgeo.CData;
+            [B, cmap] = flat_swath( circ_rows,circ_cols,latg(stop),r,256,512,A,cma );
              
             
             %displays image
             swat = geoshow(B,R);
-            colormap(winter)
+            cmap_whole = hgeo.CData;
             
             % changing tick and axis values on swath
             

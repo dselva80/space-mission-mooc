@@ -2,7 +2,7 @@ function [ A, mincol, maxcol, minrow, maxrow ] = flat_swath( circ_rows,circ_cols
 % OUTPUTS
 % A where A is an image
 
-% load iamge data
+% load image data
 dat = load('topo.mat');
 topo = dat.topo;
 

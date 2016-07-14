@@ -1,10 +1,8 @@
-function [ A, mincol, maxcol, minrow, maxrow ] = flat_swath( circ_rows,circ_cols,latg,r,height,width )
+function [ A] = flat_swath( circ_rows,circ_cols,latg,r,height,width,B)
 % OUTPUTS
 % A where A is an image
 
-% load iamge data
-dat = load('topo.mat');
-topo = dat.topo;
+% B is an image
 
 % set up some indexes in circle lon and circle lat
 quart = round(length(circ_rows)/4);
@@ -22,7 +20,7 @@ if latg+r >= 90
     % at north pole
     % have a circle of rows and cols that cannot be fully displayed
     % add another flipped image to top of map so that the edges aren't a
-    % problem.
+    % problem. This can make the poles look a bit strange
     
     
     % have to split up the circle in half to add a displacement to only
@@ -32,40 +30,32 @@ if latg+r >= 90
     top_rows=top_rows+(height-top_rows).*2;
 
     
-    % This is where I fudged it. It's not too noticeable at small (<50 FOV)
-    % if cols are not fudged the map tries to display all cols and it looks
-    % bad
+    % map tries to display all cols here. it doesnt look great at large FOV
     
     minrow=min(bottom_rows);
     maxrow=max(top_rows);
     
-    mincol=.4*width;
-    maxcol=mincol+maxrow-minrow;
-
-
-    im = cat(1,topo,fliplr(flip(topo)));
-
+    im = cat(1,B,fliplr(flip(B)));
+    
     A = im(minrow:maxrow,mincol:maxcol);
-
 
  elseif latg-r<=-90
     % at south pole
-     bottom_rows = circ_rows(quart+1:tf);
+    bottom_rows = circ_rows(quart+1:tf);
     top_rows = cat(1,circ_rows(1:quart),circ_rows(tf+1:end));
     bottom_rows = bottom_rows+height;
     top_rows = top_rows+height;
 
     
     
-    mincol=width*.4;
-    maxcol=width*.55;
     minrow=min(bottom_rows);
     maxrow=max(top_rows);
 
 
-    im = cat(1,flip(topo,1),fliplr(topo));
+    im = cat(1,flip(B,1),fliplr(B));
 
     A = im(minrow:maxrow,mincol:maxcol);
+    
  elseif maxcol-mincol > width-10
     % at prime meridian must loop longitude
 
@@ -85,13 +75,13 @@ if latg+r >= 90
     maxcol = max(beg_cols);
     mincol = min(end_cols);
 
-    im = cat(2,(topo),(topo));
-    %A = im(minrow:maxrow,mincol:maxcol);
+    im = cat(2,(B),(B));
+    
+    A = im(minrow:maxrow,mincol:maxcol);
 
 else
-    A = topo(minrow:maxrow,mincol:maxcol);
+    A = B(minrow:maxrow,mincol:maxcol);
 end
-
 
 end
 
