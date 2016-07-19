@@ -267,7 +267,7 @@ else
     n = [a2/a1,1];
 end
 
-% if two orbits are preferred by the user then plot two, else only one
+% if two orbits are preferred by t0000000he user then plot two, else only one
 if get(H.orbits,'Value') == 1
     plot3(H.ax2,x1,y1,z1,'--w',x2,y2,z2,'--w','LineWidth',1.5);
 else
