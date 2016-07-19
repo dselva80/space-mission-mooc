@@ -129,6 +129,7 @@ hold off;
 H.ax2 = axes('Units','Pixels','Position',[0 50 600 600],...
     'xcolor','none','ycolor','none','zcolor','none','Color','none');
 uistack(H.ax2,'top');
+H.ax2.View = [-100,20];
 
 % set callback functions
 set(H.slider1,'Callback',{@sliderCB,H});
@@ -267,7 +268,10 @@ else
     n = [a2/a1,1];
 end
 
-% if two orbits are preferred by t0000000he user then plot two, else only one
+%save previous view
+prevView = H.ax2.View;
+
+% if two orbits are preferred by the user then plot two, else only one
 if get(H.orbits,'Value') == 1
     plot3(H.ax2,x1,y1,z1,'--w',x2,y2,z2,'--w','LineWidth',1.5);
 else
@@ -307,6 +311,9 @@ if get(H.orbits,'Value') == 1
         'EdgeColor','none','FaceColor','r');
 end
 hold off;
+
+%apply previous view
+H.ax2.View = prevView;
 
 % reset the string of the toggle button depending on its current state
 if get(H.anim,'Value') == 1
