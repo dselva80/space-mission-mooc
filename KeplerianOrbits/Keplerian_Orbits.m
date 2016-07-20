@@ -1,10 +1,8 @@
-% find euler angles, postrotatefun -- help from Dmitry ??
-
 function Keplerian_Orbits
 % Function KEPLERIAN_ORBITS allows for user alteration of several
 % orbital parameters and animates the orbit(s) when selected by the user.
 %
-% Written by Patrick Voorhees 11-Jul-2016 11:23:00
+% Written by Patrick Voorhees 20-Jul-2016 10:49:00
 %       Copyright (c) 2016 Patrick Voorhees (pwv9@cornell.edu)
 % Advisors: Professors Dmitry Savransky and Daniel Selva (Cornell 
 %       University, Department of Mechanical and Aerospace Engineering)
@@ -262,13 +260,15 @@ mu = .000295913; %au^3 / day^2
 
 % Calculate the ratio of periods. This will be used to ensure that the
 % larger orbit has a longer period in the animation
+max_a1 = get(H.slider1,'Max');
+max_a2 = get(H.slider6,'Max'); 
 if a1 > a2
-    n = [1,a1/a2];
+    n = [1,(a1/a2)^1.5].*(max_a1/a1)^3;
 else 
-    n = [a2/a1,1];
+    n = [(a2/a1)^1.5,1].*(max_a2/a2)^3;
 end
 
-%save previous view
+% save previous view
 prevView = H.ax2.View;
 
 % if two orbits are preferred by the user then plot two, else only one
@@ -283,19 +283,14 @@ set(H.ax2,'xcolor','none','ycolor','none','zcolor','none','Color','none')
 % Create a set of axes, set the axes equal, and make the axis labels invisible.
 % This will enhance visual aid by providing lines of reference.
 ax = -get(H.slider1,'Max')*(1.1+get(H.slider2,'Max')):get(H.slider1,'Max')*(1.1+get(H.slider2,'Max'));
-plot3(H.ax2,ax,zeros(1,length(ax)),zeros(1,length(ax)),'r','LineWidth',2);
-plot3(H.ax2,zeros(1,length(ax)),ax,zeros(1,length(ax)),'g','LineWidth',2);
-plot3(H.ax2,zeros(1,length(ax)),zeros(1,length(ax)),ax,'b','LineWidth',2);
+plot3(H.ax2,ax,zeros(size(ax)),zeros(size(ax)),'r',zeros(size(ax)),ax,zeros(size(ax)),'g',...
+    zeros(size(ax)),zeros(size(ax)),ax,'b','LineWidth',2);
 axis equal;
 if get(H.pref,'Value') == 1
     rotate3d on;
 elseif get(H.pref,'Value') == 2
     zoom on;
 end
-
-% read in values and orbit calculations
-max_a1 = get(H.slider1,'Max');
-max_a2 = get(H.slider6,'Max'); 
 
 % time index
 ind1 = round(length(t1)/2); 
@@ -312,7 +307,7 @@ if get(H.orbits,'Value') == 1
 end
 hold off;
 
-%apply previous view
+% apply previous view
 H.ax2.View = prevView;
 
 % reset the string of the toggle button depending on its current state
@@ -326,11 +321,11 @@ end
 % Continue animation as long as it is selected
 while get(H.anim,'Value') == 1
     % update time but check that it is in the appropriate range
-    ind1 = ind1 + sp*ceil(n(1));
+    ind1 = ind1 + sp*n(1);
     if ind1 > length(x1)
         ind1 = ind1 - length(x1);
     end
-    ind2 = ind2 + sp*ceil(n(2));
+    ind2 = ind2 + sp*n(2);
     if ind2 > length(x2)
         ind2 = ind2 - length(x2);
     end
