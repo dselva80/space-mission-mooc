@@ -283,8 +283,8 @@ function Groundtrack_GUI
         endy = round(P/dt);
         plot3m(lat(1:endy),lon(1:endy),alt(1:endy),...
            'LineStyle','none','Marker','none');
-       axis tight
 
+       % setting up swath
         axes(hswath)
         axis tight
         ang=0:0.1:2*pi+.1;
@@ -318,11 +318,13 @@ function Groundtrack_GUI
                 start=start+1;
             end
             stop=k;
+            
             % plots animated groundtrack on globe
             [gx, gy,gz] = mfwdtran(globestruct,latg(start:stop), long(start:stop),0);
             hanim_gg.XData = gx;
             hanim_gg.YData = gy;
             hanim_gg.ZData = gz;
+            
             % plots animated groundtrack on flat world map
             [flatgx, flatgy] = mfwdtran(mstruct,latg(start:stop), long(start:stop));
             hanim_g.XData = flatgx;
@@ -343,12 +345,12 @@ function Groundtrack_GUI
             hanim_orb.XData = ox;
             hanim_orb.YData = oy;
             hanim_orb.ZData = oz;
+            
             % plot satellite
             hsat.XData = ox(end);
             hsat.YData = oy(end);
             hsat.ZData = oz(end);
            
-            
             % plot circular swath on globe
             [cgx,cgy, cgz] = mfwdtran(globestruct,circle_lat, circle_lon,0);
             circ_swath_globe.XData = cgx;

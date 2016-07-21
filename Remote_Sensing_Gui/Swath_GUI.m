@@ -13,10 +13,10 @@ function Swath_GUI
    
    % global variables passed between uicontrols and functions
    global a e i RAAN w v num_P lat lon alt latg long P hsat...
-           hanim_gg hanim_g hanim_orb dt circ_swath_globe circ_swath_flat...
-           circ_swath cone_handle cone_anim cover_anim f_orbit diam diamtext...
+           hanim_orb dt sat_z cone_z...
+           circ_swath cone_anim f_orbit diam diamtext...
            D h lambda A R C A_orig vel ground_v int_t Nx Ny val del_x locx...
-           hzoom sat_z cone_z;
+           hzoom ;
        
        % global handles of button
    global ah atext etext eh itext inch RAANtext RAANh vtext vh wtext...
@@ -37,13 +37,13 @@ function Swath_GUI
    
    stop_sign=0;
    
-   swath_running=0;
+   
    
    Nxtext = uicontrol('Style','text','String','# Crosstrack Pixels, Nx');
    Nxedit = uicontrol('Style','edit','Callback',@nx_input);
    Nxedit.String=100;
    Nx=100;
-  function [] = nx_input(H,E)
+  function [] = nx_input(H,~)
         nx = get(H,'string');
         Nx = str2double(nx);
   end
@@ -52,7 +52,7 @@ function Swath_GUI
    Nyedit = uicontrol('Style','edit','Callback',@ny_input);
    Nyedit.String=100;
    Ny=100;
-  function [] = ny_input(H,E)
+  function [] = ny_input(H,~)
         ny = get(H,'string');
         Ny = str2double(ny);
    end
@@ -61,7 +61,7 @@ function Swath_GUI
    lambdaedit = uicontrol('Style','edit','Callback',@lam_input);
    lambdaedit.String=500;
    lambda=500e-9;
-   function [] = lam_input(H,E)
+   function [] = lam_input(H,~)
         lam = get(H,'string');
         lambda = str2double(lam)*1e-9;
    end
@@ -70,7 +70,7 @@ function Swath_GUI
    Dedit = uicontrol('Style','edit','Callback',@D_input);
    Dedit.String=.1;
    D=.1;
-  function [] = D_input(H,E)
+  function [] = D_input(H,~)
         d = get(H,'string');
         D = str2double(d);
    end
@@ -80,28 +80,22 @@ function Swath_GUI
    h=7e6-Re;
    a=7e6;
    hvaredit.String=num2str(h,'%10.3e');
-   function [] = hvar_input(H,E)
+   function [] = hvar_input(H,~)
         h = get(H,'string');
         h = str2double(h);
         a = h+Re;
 %         ah.String =num2str(a,'%10.3e'); 
         
    end
-   
-  
-
-              
+        
     % Create sensor pop up menu
     sensortext = uicontrol('Style','text','String','Select Sensor Option');
     sensor = uicontrol('Style','popupmenu','String',...
         {'Conical','Whisk broom','Push broom'},'Callback',@sensor_input);
     val=1;
-    function sensor_input(source,callbackdata)
+    function sensor_input(source,~)
         val = source.Value;
-        maps = source.String; 
         
-
-
     end
    
 
@@ -110,7 +104,7 @@ function Swath_GUI
    FOVedit = uicontrol('Style','edit','Callback',@FOV_input);
    FOVedit.String=30;
    FOV=30;
-   function [] = FOV_input(H,E)
+   function [] = FOV_input(H,~)
         FOV = get(H,'string');
         FOV = str2double(FOV);
         % field of view is limited by geometry of earth
@@ -140,51 +134,12 @@ function Swath_GUI
    hanim = uicontrol('Style','togglebutton','String',...
        'Animate','Callback',@animbutton);
   
-   
-   figure(f);
+ 
    % push button for animation of orbit and groundtrack
    hedit = uicontrol('Style','pushbutton','String',...
        'Edit Orbit Parameters','Callback',@editbutton);
    
-   %%%% set positions of buttons
-           
-   % Get figure width and height
-   hedit.Position = [figwidth-175 figheight-50 150 20];
-   Nxtext.Position = [figwidth-175 figheight - 100 150 20];
-   Nxedit.Position = [figwidth-150 figheight - 125 100 20];
-   Nytext.Position = [figwidth-175 figheight - 150 150 20];
-   Nyedit.Position = [figwidth-150 figheight - 175 100 20];
-   lambdatext.Position = [figwidth-150 figheight - 200 100 20];
-   lambdaedit.Position = [figwidth-150 figheight - 225 100 20];
-   Dtext.Position = [figwidth-150 figheight - 250 100 20];
-   Dedit.Position = [figwidth-150 figheight - 275 100 20];
-   hvartext.Position = [figwidth-150 figheight - 300 100 20];
-   hvaredit.Position = [figwidth-150 figheight - 325 100 20];
-   FOVtext.Position = [figwidth-150 figheight - 350 100 20];
-   FOVedit.Position = [figwidth-150 figheight - 375 100 20];
-   sensortext.Position = [figwidth-150 figheight - 450 100 20];
-   sensor.Position = [figwidth-175 figheight - 475 150 20];
-   hanim.Position = [figwidth-175 figheight-550 150 20];
-   herror.Position = [25 5 figwidth 20];
 
-
-   halfh = round(figheight/2);
-   thirdw = round(figwidth/3);
-   tenthw = round(figwidth/15);
-   tenthh = round(figheight/15);
-
-   % outputs
-   outputtext.Position = [tenthw figheight-500 150 20];
-   del_xtext.Position = [tenthw figheight-525 150 20];
-   del_xoutput.Position = [tenthw+125 figheight-525 100 20];
-   ground_vtext.Position = [tenthw figheight-550 150 20];
-   ground_voutput.Position = [tenthw+125 figheight-550 100 20];
-   int_ttext.Position = [tenthw figheight-575 150 20];
-   int_toutput.Position = [tenthw+125 figheight-575 100 20];
-       
-    
-       
-   
    a=7e6;
    i=10;
    e=0;
@@ -192,8 +147,10 @@ function Swath_GUI
    v=0;
    w=0;
    num_P=1;
-   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%% NEW FIGURE %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-   function [] = editbutton(hObject, eventdata, handles)
+   
+   
+   %%%%%%%%%%%%%%%%% NEW FIGURE edit orbit parameters %%%%%%%%%%%%%%%%%%%%%
+   function [] = editbutton(~,~,~)
        % makes new figure for orbit parameters
         f_orbit = figure('Position',[200,200,300,450],...
        'Name','Orbit Parameters','NumberTitle','off');
@@ -203,7 +160,7 @@ function Swath_GUI
        ah = uicontrol('Style','edit','Callback',@a_input);
        ah.String = 7e6;
        a=7e6;
-       function [] = a_input(H,E)
+       function [] = a_input(H,~)
             aa = get(H,'string');
             a = str2double(aa);
             h=a-Re;
@@ -221,7 +178,7 @@ function Swath_GUI
        eh = uicontrol('Style','edit','Callback',@e_input);
        eh.String = 0;
        e=0;
-       function [] = e_input(H,E)
+       function [] = e_input(H,~)
             ee = get(H,'string');
             e = str2double(ee);
             if e<0 || e> 1
@@ -237,7 +194,7 @@ function Swath_GUI
        inch = uicontrol('Style','edit','Callback',@inc_input);
        inch.String = 10;
        i = 10;
-       function [] = inc_input(H,E)
+       function [] = inc_input(H,~)
             ii = get(H,'string');
             i = str2double(ii);
             if abs(i) > 180
@@ -254,7 +211,7 @@ function Swath_GUI
        RAANh = uicontrol('Style','edit','Callback',@RAAN_input);
        RAANh.String = 0;
        RAAN = 0;
-       function [] = RAAN_input(H,E)
+       function [] = RAAN_input(H,~)
             RAAN = get(H,'string');
             RAAN = str2double(RAAN);
             if  abs(RAAN) > 180
@@ -270,7 +227,7 @@ function Swath_GUI
        vh = uicontrol('Style','edit','Callback',@v_input);
        vh.String = 0;
        v = 0;
-       function [] = v_input(H,E)
+       function [] = v_input(H,~)
             v = get(H,'string');
             v = str2double(v);
             if  abs(v) > 180
@@ -286,7 +243,7 @@ function Swath_GUI
        wh = uicontrol('Style','edit','Callback',@w_input);
        wh.String = 0;
        w = 0;
-       function [] = w_input(H,E)
+       function [] = w_input(H,~)
             w = get(H,'string');
             w = str2double(w);
             if  abs(w) > 180
@@ -302,7 +259,7 @@ function Swath_GUI
        numPh = uicontrol('Style','edit','Callback',@numP_input);
        numPh.String=1;
        num_P=1;
-       function [] = numP_input(H,E)
+       function [] = numP_input(H,~)
             num_P = get(H,'string');
             num_P = str2double(num_P);
             if  rem(num_P,1) ~= 0 || num_P < 1
@@ -320,11 +277,11 @@ function Swath_GUI
        slideredit.String=60;
        dt=60;
        hslider = uicontrol('Style','slider','Callback',@slider_input);
-       function [] = slidertext_input(H,E)
+       function [] = slidertext_input(H,~)
             dt = get(H,'string');
             dt = str2double(dt);
        end
-       function [] = slider_input(H,E)
+       function [] = slider_input(H,~)
             dt = 60+H.Value*600;
             slideredit.String = dt;
        end
@@ -358,7 +315,7 @@ function Swath_GUI
 
    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% ANIMATE %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
    done_that = 0;
-   function [] = animbutton(hObject, eventdata, handles)
+   function [] = animbutton(hObject, ~, ~)
         button_state = hObject.Value;
         figure(f);
     if button_state == hObject.Max
@@ -368,10 +325,12 @@ function Swath_GUI
        if done_that==1
            delete(hsat);
            delete(hanim_orb);
-%            delete(circ_swath_flat);
            delete(circ_swath);
            delete(cone_anim);
-%            delete(cover_anim);
+           delete(sat_z);
+           delete(cone_z);
+           delete(diam);
+           delete(diamtext);
             A = A_orig;
        end
        
@@ -401,22 +360,22 @@ function Swath_GUI
        % calculate longitude, latitude of groundtrack. alt and P not used
        [latg, long] = Sat_orbit( a,e,i,RAAN,v,w,10*num_P,1,dt);
        
-       [ circle_lat,circle_lon,r ] = swath( alt(1)/Re, FOV, latg(1), long(1));
+       [ ~,~,r ] = swath( alt(1)/Re, FOV, latg(1), long(1));
         
         
         % here i set up handles so i can delete them in the loop.
         
         axes(haxes)
         % set up satellite
-        hsat = plot3m(lat(1), lon(1), alt(1),'Marker','s',...
-          'MarkerFaceColor','k');
+        hsat = plot3m(lat(1), lon(1), alt(1),'Marker','o',...
+          'MarkerFaceColor','k','MarkerSize',8);
         % plots animated orbit
-        hanim_orb = plot3m(lat(1), lon(1),alt(1),'Color','m');
-        %plot circular swath on flat map
-%         circ_swath_flat = scatterm(ha,circle_lat,circle_lon,[],'y','.');
+        hanim_orb = plot3m(lat(1), lon(1),alt(1),'Color','m','LineWidth',3);
+        
+        globestruct = gcm(haxes);
 
 
-        % calculates and runs conical swath animation
+        % calculates and runs conical swath animation on globe
         [xECEF, yECEF, zECEF] = conical_animation(r,alt(1),latg(1),long(1));
             
         cone_anim = surf(xECEF,yECEF,zECEF,'Facecolor','m','Facealpha',.4,'LineStyle','none');
@@ -427,7 +386,18 @@ function Swath_GUI
         
         % t counts minutes of a day in seconds
         t=0:dt:round(10*num_P*P);
-        tail_length = round(num_P*P/dt);
+        del_N =  num_P*P/3600*15;
+        x = del_N/360;
+        % nodal precession doesnt perfectly close up groundtack on itself at
+        % larger altitudes (higher P)
+        % Introducing fudgefactor which should be improved. this ff is much smaller than
+        % the calculate one. not sure why that is.
+        ff = round(a/6e6);
+        fudgefactor = -4+ff;
+        tail_length = round((num_P*P+x*num_P*P)/dt)+fudgefactor;
+        if num_P ==1
+            tail_length = tail_length+5;
+        end
         
         % rotation of earth in deg/sec
         w_earth = 360/(24*3600);
@@ -435,19 +405,37 @@ function Swath_GUI
         % setting up rotation transform
         t1 = hgtransform('Parent',haxes);
         set(hgeo,'Parent',t1);
-%         set(hconts,'Parent',t1);
-%         set(hanim_gg,'Parent',t1);
         set(cone_anim,'Parent',t1);
-%         set(cover_anim,'Parent',t1);
 
         % plot satellite orbit on globe invisibly so axis doesnt shift
         % during animation
         endy = round(P/dt);
         plot3m(lat(1:endy),lon(1:endy),alt(1:endy),...
            'LineStyle','none','Marker','none');
+       
+       % setting up swath
+        axes(hswath)
+        axis tight
+        ang=0:0.1:2*pi+.1;
+        circ_swath = plot(0,0,'m','Visible','off','LineWidth',4);
+        diam = plot(0,0,'m','Visible','off','LineWidth',3);
+        diamtext = text(0,0,'','Color','m','Visible','off','FontSize',15,...
+        'FontWeight','bold');
+    
+        % setting up zoom axis
+        axes(hzoom)
+        axis tight
+%         zoom(hzoom,5)
+        sat_z = plot3m(0,0,0,'ks','Markerfacecolor','k','MarkerSize',15,'Visible','off');
+        rix = [0 0;0 0];
+        cone_z = surf(rix,rix,rix,'Visible','off','Facecolor','m',...
+            'Facealpha',.4,'LineStyle','none');
+    
+        zlim(hzoom, [0 .1]);
+    
         % loop of animation
         for k = 1:length(t)
-            axes(haxes)
+%             axes(haxes)
             % checks if stop was pushed
             if stop_sign ==1
                 stop_sign=0;
@@ -467,88 +455,78 @@ function Swath_GUI
                 start=start+1;
             end
             stop=k;
+            
+            %%%%%%%% globe
+            
+            % convert lat and lon to x,y,z units to update globe objects
+            [ox, oy, oz] = mfwdtran(globestruct,lat(start:stop), ...
+                lon(start:stop),alt(start:stop));
+            
+            % plot satellite on globe
+            hsat.XData = ox(end);
+            hsat.YData = oy(end);
+            hsat.ZData = oz(end);
+            
+            %plot animated orbit on globe
+            hanim_orb.XData = ox;
+            hanim_orb.YData = oy;
+            hanim_orb.ZData = oz;
 
+            % get circle lat and lon
             [ circle_lat,circle_lon,r,locx] = swath( ...
                 alt(stop)/Re,FOV, latg(stop), long(stop));
 
-            
-            
-
-            
-            % plot cone under sat 
+            % plot cone under sat on globe
            [xECEF, yECEF, zECEF] = conical_animation(r,alt(stop),latg(stop),long(stop));
-            
            cone_anim.XData = xECEF;
            cone_anim.YData = yECEF;
            cone_anim.ZData = zECEF;
            
 
             
-            [rmin,rmax,cmin,cmax] = coverage_lineECEF( circle_lat,circle_lon,r,A,R );
-            
+            [rmin,rmax,cmin,cmax] = coverage_lineECEF( circle_lat,circle_lon,r,A,R);
              if abs(cmin-cmax) > 512/2;
-                A(rmin:rmax,cmax:512,:) = C(rmin:rmax,cmax:512,:);
-                minny = cmin;
-                cmin=1;
-                cmax = minny;
-            end
+                % if at  edge of image
+                if latg(stop)+r >= 90
+                    %if at north pole
+                    disp('north')
+                    hgeo.CData(1:rmax,cmin:cmax,:) = C(1:rmax,cmin:cmax,:);
+                    hgeo.CData(1:rmin,cmin:cmax,:) = C(1:rmin,cmin:cmax,:);
+%                     A(1:rmin,:,:) = C(1:rmin,:,:);
+                elseif latg(stop)-r <= -90
+                        disp('south')
+                else
+                    % else crossing prime meridian
+                    hgeo.CData(rmin:rmax,cmax:512,:) = C(rmin:rmax,cmax:512,:);
+                    hgeo.CData(rmin:rmax,1:cmin,:) = C(rmin:rmax,1:cmin,:);
+                    disp('true')
+                    
+                end
             
-            A(rmin:rmax,cmin:cmax,:) = C(rmin:rmax,cmin:cmax,:);
+             else
+                hgeo.CData(rmin:rmax,cmin:cmax,:) = C(rmin:rmax,cmin:cmax,:);
+             end
             
             
-            delete(hgeo)
-            hgeo = geoshow(A,R);
-%             demcmap(A)
-            set(hgeo,'Parent',t1);
-            
-            % plots animated orbit
-            delete(hanim_orb)
-            hanim_orb = plot3m(lat(start:stop), lon(start:stop),...
-                alt(start:stop),'Color','m','LineWidth',3);
-            % plot satellite
-            delete(hsat);
-            hsat = plot3m(lat(stop), lon(stop), alt(stop),...
-                'Marker','o','MarkerFaceColor','k');
-            
-           
-            
-            %%%%%%% flat map of swath
-            axes(hswath)
-            hswath.Visible = 'on' ;
-            
-            % converts lat and lon of swath to rows and cols of pixels
-            circ_rows = zeros(size(circle_lat));
-            circ_cols = zeros(size(circle_lat));
-            for p=1:length(circle_lat)
-                [r1,c1] = setpostn(A,R,circle_lat(p),circle_lon(p));
-                circ_rows(p)=r1;
-                circ_cols(p)=c1;
-            end
             
            
-            % creates image to be displayed by swath
-            cmap = hgeo.CData;
             
-            [B] = flat_swath( circ_rows,circ_cols,latg(stop),r,256,512,A );
-             
+            %%%%%%% flat map of swath %%%%%%%
             
-            %displays image
-            swat = geoshow(B,R);
-            colormap(winter)
+            origin = [round(latg(stop)) round(long(stop))];
+            setm(hswath,'Origin',origin,'FLatLimit',[-Inf r])
             
-            % changing tick and axis values on swath
-            
-%             image(A(minrow:maxrow,mincol:maxcol),'CDataMapping','scaled')
-%             colormap(A.CData)
-            hold on
-            xlimits = xlim;
+            % getting the limits of the swath
+            xlimits = xlim(hswath);
             x1 = xlimits(1);
             x2 = x1+(xlimits(2)-xlimits(1))/2;
             x3 = xlimits(2);
-            ylimits = ylim;
+            ylimits = ylim(hswath);
             y1 = ylimits(1);
             y2 = y1+(ylimits(2)-ylimits(1))/2;
             y3 = ylimits(2);
+            
+            % setting the lat ticks and tick labels for swath
             hswath.XTick=[x1 x2 x3];
             hswath.YTick=[y1 y2 y3];
             lattext = strcat(num2str(round(latg(stop))),'{\circ}');
@@ -563,7 +541,7 @@ function Swath_GUI
             lat1text = strcat(num2str(lat1),'{\circ}');
             lat3text = strcat(num2str(lat3),'{\circ}');
             
-            
+            % setting the lon ticks and tick labels for swath
             lontext = strcat(num2str(round(long(stop))),'{\circ}');
             lon1 = round(long(stop)-r);
             if lon1<-180
@@ -575,88 +553,79 @@ function Swath_GUI
             end
             lon1text = strcat(num2str(lon1),'{\circ}');
             lon3text = strcat(num2str(lon3),'{\circ}');
-            hswath.YTickLabel = {lat3text,lattext,lat1text};        
+            hswath.YTickLabel = {lat1text,lattext,lat3text};        
             hswath.XTickLabel = {lon1text,lontext,lon3text}; 
             
+            % plot circular swath on flat swath
+            rad = x2-x1;
+            % this fixes the fact that the frame of the ortho projection 
+            % is not filled with pixels.
+            % diy frame, slightly smaller than the matlab frame would be
+            xp=(rad-rad/r)*cos(ang);
+            yp=(rad-rad/r)*sin(ang);
+            circ_swath.XData = x2+xp;
+            circ_swath.YData = y2+yp;
+            circ_swath.Visible = 'on';
             
-            if swath_running==1
-                delete(circ_swath);
-                delete(diam);
-                delete(diamtext);
-                delete(sat_z);
-                delete(cone_z);
-%                 delete(test);
-%                 delete(test2);
-%                 delete(test3);
-            end
             
-            %plot circular swath on flat swath
-            ang=0:0.1:2*pi+.1; 
-            xp=(x2-x1)*cos(ang);
-            yp=(y2-y1)*sin(ang);
-            circ_swath = plot(x2+xp,y2+yp,'y','LineWidth',4);
-            % plot title
-            swath_text.Position = [thirdw+1.9*tenthw,tenthh*7,200,30];
-            swath_text.Visible = 'on';
             % plot diameter and diameter text
-            xdiam = x1:1:x3;
+            xdiam = x1+1/r*rad:.001:x3-1/r*rad;
             ydiam = ones(size(xdiam))*y2;
-            diam = plot(xdiam,ydiam,'y','LineWidth',3);
+            diam.XData = xdiam;
+            diam.YData = ydiam;
+            diam.Visible='on';
+            
+            % updating diameter km text
             str = strcat(num2str(round(abs(locx))),' km');
-            diamtext = text(x2+x2/4,y2+y2/4,str,'Color','y','FontSize',15);
-            hold off
+            diamtext.Visible = 'on';
+            diamtext.String = str;
+            diamtext.Position = [x2-x1/8 y2-y1/4];
+            
+            swathgeo.CData(rmin:rmax,cmin:cmax,:) = C(rmin:rmax,cmin:cmax,:);
+
             
             
+            %%%% hzoom axis
+            setm(hzoom,'Origin',origin,'FLatLimit',[-Inf r*3])
             
-            %%%% set up hzoom axis
-            axes(hzoom)
             hzoom.Visible = 'on' ;
-            hold on
-            %creates image to be displayed by swath
-            [ circle_lat2,circle_lon2,r2,locx2] = swath( ...
-                alt(stop)/Re,FOV*2, latg(stop), long(stop));
-            circ_rows2 = zeros(size(circle_lat2));
-            circ_cols2 = zeros(size(circle_lat2));
-            for p=1:length(circle_lat2)
-                [r1,c1] = setpostn(A,R,circle_lat2(p),circle_lon2(p));
-                circ_rows2(p)=r1;
-                circ_cols2(p)=c1;
-            end
-            [Q] = flat_swath( circ_rows2,circ_cols2,latg(stop),r2,256,512,A);
             
+           
             
-            
-            xlimits2 = xlim;
+           
+            xlimits2 = xlim(hzoom);
             x4 = xlimits2(1);
             x6 = xlimits2(2);
             x5 = x4+(x6-x4)/2;
 
 
-            ylimits2 = ylim;
+            ylimits2 = ylim(hzoom);
             y4 = ylimits2(1);
             y6 = ylimits2(2);
             y5 = y4+(y6-y4)/2;
             
-           
+            zoomgeo.CData = hgeo.CData;
             
-            geoshow(Q,R);
-            view(60,40)
-            axis off
+            % approximate altitude
+            zeta = alt(stop)/1e7;
             
-            % approximate altitude in pixels
-            % used 512 pixels (longitude) = 4e7m cirfumference at equator of earth;
-            zeta = alt(stop)/4e7*512;
-            sat_z = plot3(x5,y5,zeta,'ks','MarkerFaceColor','k','MarkerSize',15);
-%             test = plot3(x4,y4,0,'rs','MarkerFaceColor','r','MarkerSize',10);
-%             test2 = plot3(x5,y5,0,'cs','MarkerFaceColor','g','MarkerSize',10);
-%             test3 =plot3(x6,y6,0,'gs','MarkerFaceColor','g','MarkerSize',10);
-           
+            zlim(hzoom, [0 zeta]);
             
+            % updating sat on zoomie axis
+            sat_z.XData = x5;
+            sat_z.YData = y5;
+            sat_z.ZData = zeta;
+            sat_z.Marker = 's';
+            sat_z.Visible='on';
             
             
-            % plot cone on swath
-            xcirc2 = xp+x5-3;
-            ycirc2 = yp+y5+2;
+            
+            % plot cone on zoom
+            axis(hzoom,'off')
+            xcone=(rad+rad/r)*cos(ang);
+            ycone=(rad+rad/r)*sin(ang);
+            xcirc2 = xcone+x5;
+            ycirc2 = ycone+y5;
             xsurf = zeros(2,length(xcirc2));
             xsurf(1,:) = xcirc2; 
             xsurf(2,:) = x5;
@@ -669,9 +638,12 @@ function Swath_GUI
             zsurf(1,:) = 0;
             zsurf(2,:) = zeta;
             
-            cone_z = surf(xsurf,ysurf,zsurf,'Facecolor','m','Facealpha',.4,'LineStyle','none');
-            
-            swath_running=1;
+            % updating cone surface
+            cone_z.XData=xsurf;
+            cone_z.YData=ysurf;
+            cone_z.ZData=zsurf;
+
+            cone_z.Visible = 'on';
             drawnow
         end
         
@@ -685,7 +657,7 @@ function Swath_GUI
 
 
 %function for when window is resized
-function resizeui(hObject,callbackdata)
+function resizeui(~,~)
     
         figure(f)
            
@@ -738,6 +710,7 @@ function resizeui(hObject,callbackdata)
        % maps
        haxes.Position = [thirdw+2*tenthw,halfh,thirdw-tenthw,halfh-tenthh];
        hswath.Position = [tenthw,halfh,thirdw-tenthw,halfh-tenthh];
+       hzoom.Position = [thirdw+2*tenthw,tenthh,thirdw-tenthw,halfh-2*tenthh];
 end
 
 
@@ -749,13 +722,6 @@ end
    A_orig = A;
    C = (A+30)*2;
   
-     
-   % flat world map
-%    ha = axes('Units','Pixels'); 
-%    worldmap world;
-%    load topo.mat topolegend topo;
-%    geoshow(topo,topolegend,'DisplayType','texturemap')
-   
    % globe on new axis
     earth = referenceEllipsoid('earth','m');
     haxes = axes('Units','Pixels'); 
@@ -763,26 +729,34 @@ end
     axesm ('globe','Grid', 'on','Geoid',earth);
     view(60,60)
     axis off
-    
     hgeo = geoshow(A,R);
     
-    % load surface of globe
-%     load topo.mat topolegend topo;
-%     hgeo = geoshow(topo,topolegend,'DisplayType','texturemap');
-%     demcmap(topo)
-%     land = shaperead('landareas','UseGeoCoords',true);
-%     hconts = plotm([land.Lat],[land.Lon],'Color','black');
+
     
    
-   hswath = axes('Units','Pixels'); 
-   hswath.Visible='off';
+       % create axis 
+    hswath = axes('Units','pixels');
+    hswath = axesm('ortho','Origin',[0 0],'FLatLimit',[-Inf 0], ...
+            'frame','off','grid','off');
+    
+    box(hswath,'off')
+    set(hswath,'color','none');
+    axis on
+    swathgeo = geoshow(A,R);
    
-   hzoom =  axes('Units','Pixels'); 
+    % zoom axis
+   hzoom = axes('Units','Pixels'); 
+   
+   hzoom = axesm('ortho','Origin',[0 0],'FLatLimit',[-Inf 0], ...
+            'frame','off','grid','off');
+   view(60,40)
+   zoomgeo = geoshow(A,R);
+%    axis tight
+%    zoom(100)
+   zoom(hzoom,2)
+   box(hzoom,'off')
    axis off
    
-   haxes.Position = [thirdw+2*tenthw,halfh,thirdw-tenthw,halfh-tenthh];
-   hswath.Position = [tenthw,halfh,thirdw-tenthw,halfh-tenthh];
-   hzoom.Position = [thirdw+2*tenthw,tenthh,thirdw-tenthw,halfh-2*tenthh];
    
    % Make the UI visible.
    f.Visible = 'on';

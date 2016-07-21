@@ -1,7 +1,8 @@
-function [ A] = flat_swath( circ_rows,circ_cols,latg,r,height,width,B)
+function [ A,minrow,maxrow,mincol,maxcol] = flat_swath( circ_rows,circ_cols,latg,r,height,width,B)
 % OUTPUTS
 % A where A is an image
 
+% INPUTS
 % B is an image
 
 % set up some indexes in circle lon and circle lat
@@ -75,7 +76,7 @@ if latg+r >= 90
     maxcol = max(beg_cols);
     mincol = min(end_cols);
 
-    im = cat(2,(B),(B));
+    im = cat(2,B,B);
     
     A = im(minrow:maxrow,mincol:maxcol);
 
