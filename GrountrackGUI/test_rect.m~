@@ -1,0 +1,80 @@
+
+
+lat=40;
+lon=40;
+h = 6.2132e+05;
+lat0 = 0;
+lon0=0;
+h0=0;
+r=10;
+
+earth = referenceEllipsoid('earth');
+
+
+[circlat,circlon] = scircle1(lat+r,lon+r,5);
+
+
+
+[x0,y0,z0] = geodetic2ecef(earth,lat,lon,0);
+
+[xh,yh,zh] = geodetic2ecef(earth,lat,lon,h);
+
+[xcirc,ycirc,zcirc] = geodetic2ecef(earth,circlat,circlon,0);
+
+for dist=-r:.1:r
+    [circlat,circlon] = scircle1(lat+dist,lon+dist,5);
+
+xsurf = zeros(2,length(xcirc));
+xsurf(1,:) = xcirc; 
+xsurf(2,:) = xh;
+
+ysurf = zeros(2,length(ycirc));
+ysurf(1,:) = ycirc;
+ysurf(2,:) = yh;
+
+zsurf = zeros(2,length(zcirc));
+zsurf(1,:) = zcirc;
+zsurf(2,:) = zh;
+
+
+
+
+
+%[lat,lon,h1] = enu2geodetic(x,y,z,lat0,lon0,h0,earth);
+
+
+% multpily unit cylinder by local x y z to get scale right
+% la1 = r*x+lat;
+% lo1 = r*y+lon;
+% z1 = z*h;
+
+
+
+% this code is for testing this functin on its own
+   % globe on new axis
+    haxes = axes('Units','Pixels'); 
+    axis vis3d
+    axesm ('globe','Grid', 'on','Geoid',earth);
+    view(60,60)
+    axis off
+    % load surface of globe
+    load topo.mat topolegend topo;
+    hgeo = geoshow(topo,topolegend,'DisplayType','texturemap');
+    demcmap(topo)
+    land = shaperead('landareas','UseGeoCoords',true);
+    hconts = plotm([land.Lat],[land.Lon],'Color','black');
+    
+
+cone_handle = surf(xsurf,ysurf,zsurf,'Facecolor','m','Facealpha',.5,'LineStyle','none');
+
+[ax,ay,az] = geodetic2ecef(earth,lat,lon,h);
+
+t1 = hgtransform('Parent',haxes);
+set(cone_handle,'Parent',t1)
+
+for rads = .1:.1:20*pi
+    M = makehgtform('axisrotate',[ax,ay,az],rads);
+    set(t1,'Matrix',M)
+    drawnow
+    
+end

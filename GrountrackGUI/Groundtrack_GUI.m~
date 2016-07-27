@@ -208,9 +208,7 @@ function Groundtrack_GUI
         slideredit.String = dt;
         if animating == 1
             hanim.Value=0;
-            animbutton(hanim)
             hanim.Value=1;
-            animbutton(hanim)
         end
    end
 
@@ -232,9 +230,7 @@ function Groundtrack_GUI
         end
         if animating == 1
             hanim.Value=0;
-            animbutton(hanim)
             hanim.Value=1;
-            animbutton(hanim)
         end
    end
 
@@ -367,7 +363,7 @@ function Groundtrack_GUI
         downward = 0;
         k=1;
         % loop of animation
-        while k <=length(t) && hObject.Value==1
+        while k <length(t) && hObject.Value==1
             k=k+1;
             animating=1;
 
