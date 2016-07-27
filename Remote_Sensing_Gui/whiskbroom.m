@@ -1,4 +1,4 @@
-function [ int_time, ground_v ] = whiskbroom( h,vel, del_y,Nx,Ny,locx)
+function [ int_time, ground_v,data_rate ] = whiskbroom( h,vel, del_y,Nx,Ny,locx,bits,Nband)
 % Computes integration time, ground velocity for pushbroom sensors
 
 % INPUTS:
@@ -21,6 +21,7 @@ ground_v = Re * vel / (Re+h);
 % compute integration time
 int_time = ( Ny*del_y ) / (2*ground_v*Nx);
 
+data_rate = Nband*Nx*Ny*bits / (del_y/ground_v);
 
 end
 

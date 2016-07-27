@@ -115,6 +115,68 @@ function Swath_GUI
         end
    end
 
+   Nbandtext = uicontrol('Style','text','String','Number of bands, Nband');
+   Nbandedit = uicontrol('Style','edit','Callback',@Nband_input);
+   Nbandedit.String=30;
+   Nband=30;
+   function [] = Nband_input(H,~)
+        Nbandz = get(H,'string');
+        Nband = str2double(Nbandz);
+   end
+
+   nadirtext = uicontrol('Style','text','String','Off Nadir Angle [deg]');
+   nadiredit = uicontrol('Style','edit','Callback',@nadir_input);
+   nadiredit.String=10;
+   nadir=10;
+   function [] = nadir_input(H,~)
+        nad = get(H,'string');
+        nadir = str2double(nad);
+   end
+
+   
+   
+
+   bitstext = uicontrol('Style','text','String','Bits / pixel');
+   bitsedit = uicontrol('Style','edit','Callback',@bits_input);
+   bitsedit.String=12;
+   bits=12;
+   function [] = bits_input(H,~)
+        bit = get(H,'string');
+        bits = str2double(bit);
+   end
+
+   tracktext = uicontrol('Style','text','String','Track Angle [deg]');
+   trackedit = uicontrol('Style','edit','Callback',@track_input);
+   trackedit.String=100;
+   track=100;
+   function [] = track_input(H,~)
+        tra = get(H,'string');
+        track = str2double(tra);
+   end
+
+   alongtext = uicontrol('Style','text','String','Along Track Angle [deg]');
+   alongedit = uicontrol('Style','edit','Callback',@along_input);
+   alongedit.String=10;
+   along=10;
+   function [] = along_input(H,~)
+        alo = get(H,'string');
+        along = str2double(alo);
+   end
+   alongtext.Visible='off';
+   alongedit.Visible='off';
+
+   crosstext = uicontrol('Style','text','String','Cross Track Angle [deg]');
+   crossedit = uicontrol('Style','edit','Callback',@cross_input);
+   crossedit.String=10;
+   cross=10;
+   function [] = cross_input(H,~)
+        cro = get(H,'string');
+        cross = str2double(cro);
+   end
+   crosstext.Visible='off';
+   crossedit.Visible='off';
+   
+
     %%%%% OUTPUTS %%%%%%
    outputtext = uicontrol('Style','text','String','OUTPUTS');
    del_xtext = uicontrol('Style','text','String','Spatial Resolution');
@@ -123,7 +185,11 @@ function Swath_GUI
    ground_voutput = uicontrol('Style','text','String','');
    int_ttext = uicontrol('Style','text','String','Integration Time');
    int_toutput = uicontrol('Style','text','String','');
-
+   swath_area_text = uicontrol('Style','text','string','Swath Area');
+   swath_area_output = uicontrol('Style','text','string','');
+   data_rate_text = uicontrol('Style','text','string','Data Rate');
+   data_rate_output = uicontrol('Style','text','string','');
+  
     
    % text field empty until error
    herror = uicontrol('Style','text','String',err_string);
@@ -341,16 +407,45 @@ function Swath_GUI
             %conical swath
             ground_voutput.String = '';
             int_toutput.String = '';
+            area = round(pi*(locx/2)^2);
+            swath_area_output.String = strcat(num2str(area,'%10.2e'),' km^2');
+            nadirtext.Visible = 'on';
+            nadiredit.Visible = 'on';
+            tracktext.Visible='on';
+            trackedit.Visible='on';
+            alongtext.Visible = 'off';
+            alongedit.Visible = 'off';
+            crosstext.Visible='off';
+            crossedit.Visible='off';
+           
        elseif val ==2
             %whiskbroom
-            [ int_t, ground_v ] = whiskbroom( h,vel(1), del_x,Nx,Ny,locx);
+            [ int_t, ground_v,data_rate ] = whiskbroom( h,vel(1),del_x,Nx,Ny,locx,bits,Nband);
             ground_voutput.String = strcat(num2str(round(ground_v)),' m/s');
             int_toutput.String = strcat(num2str(int_t*1000),' ms');
+            data_rate_output.String = strcat(num2str(data_rate/1e6,'%10.2e'),' Mbps');
+            nadirtext.Visible = 'off';
+            nadiredit.Visible = 'off';
+            tracktext.Visible='off';
+            trackedit.Visible='off';
+            alongtext.Visible = 'on';
+            alongedit.Visible = 'on';
+            crosstext.Visible='on';
+            crossedit.Visible='on';
         else
             %pushbroom
-            [ int_t, ground_v ] = pushbroom( h,vel(1),del_x);
+            [ int_t, ground_v,data_rate ] = pushbroom( h,vel(1),del_x,Nx,Nband,bits);
             ground_voutput.String = strcat(num2str(round(ground_v)),' m/s');
             int_toutput.String = strcat(num2str(int_t*1000),' ms');
+            data_rate_output.String = strcat(num2str(data_rate/1e6,'%10.2e'),' Mbps');
+            nadirtext.Visible = 'off';
+            nadiredit.Visible = 'off';
+            tracktext.Visible='off';
+            trackedit.Visible='off';
+            alongtext.Visible = 'on';
+            alongedit.Visible = 'on';
+            crosstext.Visible='on';
+            crossedit.Visible='on';
        end
 
         
@@ -413,6 +508,14 @@ function Swath_GUI
         plot3m(lat(1:endy),lon(1:endy),alt(1:endy),...
            'LineStyle','none','Marker','none');
        
+       % determine heading
+       heading = zeros(length(latg)-1);
+       for x=1:length(latg)-1
+            slat = [latg(x) latg(x+1)];
+            slon = [long(x) long(x+1)];
+            [heading(x), ~] = legs(slat,slon,'gc');
+       end
+       
        % setting up swath
         axes(hswath)
         axis tight
@@ -425,7 +528,6 @@ function Swath_GUI
         % setting up zoom axis
         axes(hzoom)
         axis tight
-%         zoom(hzoom,5)
         sat_z = plot3m(0,0,0,'ks','Markerfacecolor','k','MarkerSize',15,'Visible','off');
         rix = [0 0;0 0];
         cone_z = surf(rix,rix,rix,'Visible','off','Facecolor','m',...
@@ -513,8 +615,19 @@ function Swath_GUI
             
             %%%%%%% flat map of swath %%%%%%%
             
-            origin = [round(latg(stop)) round(long(stop))];
+            origin = [round(latg(stop)) round(long(stop) -heading(stop))];
             setm(hswath,'Origin',origin,'FLatLimit',[-Inf r])
+            
+            % if latitude starts decreasing
+            % compare lats 2 pts apart. pts next door will give
+            % errors around poles occasionally because its not accurate to
+            % tell if increasing/decreasing. Needs more testing to be sure
+            if stop>2 && latg(stop-1)>latg(stop+1)
+                view(hswath, [180,90])
+            else
+                view(hswath,[0,90])
+            end
+            
             
             % getting the limits of the swath
             xlimits = xlim(hswath);
@@ -665,30 +778,42 @@ function resizeui(~,~)
        figwidth = f.Position(3);
        figheight = f.Position(4);
        
-       hedit.Position = [figwidth-175 figheight-50 150 20];
-       Nxtext.Position = [figwidth-175 figheight - 100 150 20];
-       Nxedit.Position = [figwidth-150 figheight - 125 100 20];
-       Nytext.Position = [figwidth-175 figheight - 150 150 20];
-       Nyedit.Position = [figwidth-150 figheight - 175 100 20];
-       lambdatext.Position = [figwidth-150 figheight - 200 100 20];
-       lambdaedit.Position = [figwidth-150 figheight - 225 100 20];
-       Dtext.Position = [figwidth-150 figheight - 250 100 20];
-       Dedit.Position = [figwidth-150 figheight - 275 100 20];
-       hvartext.Position = [figwidth-150 figheight - 300 100 20];
-       hvaredit.Position = [figwidth-150 figheight - 325 100 20];
+       %1st col on main figure
+       hedit.Position = [figwidth-212 figheight-25 150 20];
+       Nxtext.Position = [figwidth-275 figheight - 50 150 20];
+       Nxedit.Position = [figwidth-250 figheight - 75 100 20];
+       Nytext.Position = [figwidth-275 figheight - 100 150 20];
+       Nyedit.Position = [figwidth-250 figheight - 125 100 20];
+       lambdatext.Position = [figwidth-250 figheight - 150 100 20];
+       lambdaedit.Position = [figwidth-250 figheight - 175 100 20];
+       Dtext.Position = [figwidth-250 figheight - 200 100 20];
+       Dedit.Position = [figwidth-250 figheight - 225 100 20];
+       hvartext.Position = [figwidth-250 figheight - 250 100 20];
+       hvaredit.Position = [figwidth-250 figheight - 275 100 20];
+       Nbandtext.Position = [figwidth-275 figheight - 300 150 20];
+       Nbandedit.Position = [figwidth-250 figheight - 325 100 20];
+       bitstext.Position = [figwidth-250 figheight - 350 100 20];
+       bitsedit.Position = [figwidth-250 figheight - 375 100 20];
+       FOVtext.Position = [figwidth-250 figheight - 400 100 20];
+       FOVedit.Position = [figwidth-250 figheight - 425 100 20];
        
        
-       FOVtext.Position = [figwidth-150 figheight - 350 100 20];
-       FOVedit.Position = [figwidth-150 figheight - 375 100 20];
+       %2nd column
+       sensortext.Position = [figwidth-125 figheight - 50 100 20];
+       sensor.Position = [figwidth-130 figheight - 75 110 20];
        
+       nadirtext.Position = [figwidth-125 figheight - 100 100 20];
+       nadiredit.Position = [figwidth-125 figheight - 125 100 20];
+       tracktext.Position = [figwidth-125 figheight - 150 100 20];
+       trackedit.Position = [figwidth-125 figheight - 175 100 20];
        
+       alongtext.Position = [figwidth-150 figheight - 200 150 20];
+       alongedit.Position = [figwidth-125 figheight - 225 100 20];
+       crosstext.Position = [figwidth-150 figheight - 250 150 20];
+       crossedit.Position = [figwidth-125 figheight - 275 100 20];
        
-       sensortext.Position = [figwidth-150 figheight - 450 100 20];
-       sensor.Position = [figwidth-175 figheight - 475 150 20];
-       
-       
-       
-       hanim.Position = [figwidth-175 figheight-550 150 20];
+       %animate button
+       hanim.Position = [figwidth-212 figheight-575 150 20];
        herror.Position = [25 5 figwidth 20];
        
        
@@ -698,19 +823,25 @@ function resizeui(~,~)
        tenthh = round(figheight/15);
        
        % outputs
-       outputtext.Position = [tenthw figheight-500 150 20];
-       del_xtext.Position = [tenthw figheight-525 150 20];
-       del_xoutput.Position = [tenthw+125 figheight-525 100 20];
-       ground_vtext.Position = [tenthw figheight-550 150 20];
-       ground_voutput.Position = [tenthw+125 figheight-550 100 20];
-       int_ttext.Position = [tenthw figheight-575 150 20];
-       int_toutput.Position = [tenthw+125 figheight-575 100 20];
+       ih = figheight-375;
+       step=25;
+       outputtext.Position =        [tenthw ih-step 150 20];
+       del_xtext.Position =         [tenthw ih-step*2 150 20];
+       del_xoutput.Position =       [tenthw+125 ih-step*2 100 20];
+       ground_vtext.Position =      [tenthw ih-step*3 150 20];
+       ground_voutput.Position =    [tenthw+125 ih-step*3 100 20];
+       int_ttext.Position =         [tenthw ih-step*4 150 20];
+       int_toutput.Position =       [tenthw+125 ih-step*4 100 20];
+       swath_area_text.Position =   [tenthw ih-step*5 150 20];
+       swath_area_output.Position = [tenthw+125 ih-step*5 100 20];
+       data_rate_text.Position =    [tenthw ih-step*6 150 20];
+       data_rate_output.Position =  [tenthw+125 ih-step*6 100 20];
        
     
        % maps
-       haxes.Position = [thirdw+2*tenthw,halfh,thirdw-tenthw,halfh-tenthh];
-       hswath.Position = [tenthw,halfh,thirdw-tenthw,halfh-tenthh];
-       hzoom.Position = [thirdw+2*tenthw,tenthh,thirdw-tenthw,halfh-2*tenthh];
+       haxes.Position = [thirdw+tenthw,halfh,thirdw,halfh-tenthh];
+       hswath.Position = [tenthw,halfh,thirdw,halfh-tenthh];
+       hzoom.Position = [thirdw+tenthw,tenthh,thirdw,halfh-2*tenthh];
 end
 
 
@@ -752,7 +883,6 @@ end
    view(60,40)
    zoomgeo = geoshow(A,R);
 %    axis tight
-%    zoom(100)
    zoom(hzoom,2)
    box(hzoom,'off')
    axis off
