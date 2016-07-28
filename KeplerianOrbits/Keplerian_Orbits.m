@@ -261,11 +261,10 @@ mu = .000295913; %au^3 / day^2
 % Calculate the ratio of periods. This will be used to ensure that the
 % larger orbit has a longer period in the animation
 max_a1 = get(H.slider1,'Max');
-max_a2 = get(H.slider6,'Max'); 
 if a1 > a2
     n = [1,(a1/a2)^1.5].*(max_a1/a1)^3;
 else 
-    n = [(a2/a1)^1.5,1].*(max_a2/a2)^3;
+    n = [(a2/a1)^1.5,1].*(max_a1/a2)^3;
 end
 
 % save previous view
@@ -302,7 +301,7 @@ surf(H.ax2,max_a1*x/12,max_a1*y/12,max_a1*z/12,'EdgeColor','none','FaceColor','y
 planet1 = surf(H.ax2,max_a1*x/15+x1(ind1),max_a1*y/15+y1(ind1),max_a1*z/15+z1(ind1),...
     'EdgeColor','none','FaceColor','g');
 if get(H.orbits,'Value') == 1
-    planet2 = surf(H.ax2,max_a2*x/15+x2(ind2),max_a2*y/15+y2(ind2),max_a2*z/15+z2(ind2),...
+    planet2 = surf(H.ax2,max_a1*x/15+x2(ind2),max_a1*y/15+y2(ind2),max_a1*z/15+z2(ind2),...
         'EdgeColor','none','FaceColor','r');
 end
 hold off;
@@ -334,8 +333,8 @@ while get(H.anim,'Value') == 1
     set(planet1,'XData',max_a1*x/15+x1(ceil(ind1)),'YData',max_a1*y/15+y1(ceil(ind1)),...
         'ZData',max_a1*z/15+z1(ceil(ind1)));
     if get(H.orbits,'Value') == 1 && get(H.anim,'Value') == 1
-        set(planet2,'XData',max_a2*x/15+x2(ceil(ind2)),'YData',max_a2*y/15+y2(ceil(ind2)),...
-            'ZData',max_a2*z/15+z2(ceil(ind2)));
+        set(planet2,'XData',max_a1*x/15+x2(ceil(ind2)),'YData',max_a1*y/15+y2(ceil(ind2)),...
+            'ZData',max_a1*z/15+z2(ceil(ind2)));
     end
     drawnow
     pause(eps);
