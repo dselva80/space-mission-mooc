@@ -1,128 +1,131 @@
 function SBHT
 % set up display axes for user understanding of the angles
 ops = {'BackgroundColor','ForegroundColor','FontWeight','FontSize'};
-H.fig = figure('Name','Single_Body_Hohmann_Transfer','Position',[10 50 1350 600],'Color','k');
-H.disp = axes('Units','Pixels','Position',[820 -150 600 600],...
-    'xcolor','no','ycolor','no','zcolor','no','Color','no');
-display(H.disp);
-set(H.disp,'View',[-42,35]);
-
-% set up the axes to plot orbits and animate
-H.ax = axes('Units','Pixels','Position',[-50 0 700 700],...
-    'xcolor','no','ycolor','no','zcolor','no','Color','no');
-H.ax.View = [-100,20];
+H.fig = figure('Name','Single_Body_Hohmann_Transfer','Position',...
+    [10 50 1350 600],'Color','k','Resize','off');
 
 % commands
 H.animPref_text = uicontrol('Style','text','Position',[600 575 150 20],'String','Animation Style',...
-    ops{1},'k',ops{2},'w',ops{3},'Bold',ops{4},10);
+    ops{1},'no',ops{2},'w',ops{3},'Bold',ops{4},10);
 H.planets_text = uicontrol('Style','text','Position',[600 510 150 20],'String','Planet',...
-    ops{1},'k',ops{2},'w',ops{3},'Bold',ops{4},10);
+    ops{1},'no',ops{2},'w',ops{3},'Bold',ops{4},10);
 H.text_speed = uicontrol('Style','text','Position',[600 340 150 20],'String','Animation Speed',...
-    ops{1},'k',ops{2},'w',ops{3},'Bold',ops{4},10);
-H.animPref = uicontrol('Style','popupmenu','Position',[625 555 100 20],ops{1},'k',ops{2},'w',ops{3},...
+    ops{1},'no',ops{2},'w',ops{3},'Bold',ops{4},10);
+H.animPref = uicontrol('Style','popupmenu','Position',[625 555 100 20],ops{1},'no',ops{2},'w',ops{3},...
     'Bold',ops{4},10,'Value',1,'String',{'Automatic','Manual'});
-H.planets = uicontrol('Style','popupmenu','Position',[625 490 100 20],ops{1},'k',ops{2},'w',ops{3},'Bold',ops{4},10,...
+H.planets = uicontrol('Style','popupmenu','Position',[625 490 100 20],ops{1},'no',ops{2},'w',ops{3},'Bold',ops{4},10,...
     'Value',3,'String',{'Mercury','Venus','Earth','Mars','Jupiter','Saturn','Uranus','Neptune','Moon'});
 H.print_planet = uicontrol('Style','text','Position',[600 400 150 80],'String',...
-    sprintf('\nmu = 398600.00 (km^3)/(s^2) \n      R = 6378.10 km'),ops{1},'none',ops{2},'w',ops{3},'Bold',ops{4},10);
+    sprintf('\nmu = 398600.00 (km^3)/(s^2) \n      R = 6378.10 km'),ops{1},'no',ops{2},'w',ops{3},'Bold',ops{4},10);
 H.parameters = uicontrol('Style','text','Position',[500 50 300 200],'String','',...
-    ops{1},'k',ops{2},'w',ops{3},'Bold',ops{4},10);
+    ops{1},'no',ops{2},'w',ops{3},'Bold',ops{4},10);
 H.pref = uicontrol('Style','popupmenu','Position',[625 370 100 25],'String',{'Rotate on','Zoom on'},...
-    ops{1},'k',ops{2},'w',ops{3},'Bold',ops{4},10);
+    ops{1},'no',ops{2},'w',ops{3},'Bold',ops{4},10);
 H.speed = uicontrol('Style','slider','Position',[625 310 100 25],'Min',.25,'Max',4,'Value',2,...
-    ops{1},'k',ops{2},'w',ops{3},'Bold',ops{4},10);
+    ops{1},'no',ops{2},'w',ops{3},'Bold',ops{4},10);
 H.animate = uicontrol('Style','togglebutton','Position',[625 270 100 25],'Value',0,...
-    'String','Play',ops{1},'k',ops{2},'w',ops{3},'Bold',ops{4},10);
+    'String','Play',ops{1},'no',ops{2},'w',ops{3},'Bold',ops{4},10);
 
 % first orbit parameters
 H.text_orb1 = uicontrol('Style','text','Position',[750 575 150 20],'String','-- Initial Orbit --',...
-    ops{1},'k',ops{2},'w',ops{3},'Bold',ops{4},10);
+    ops{1},'no',ops{2},'w',ops{3},'Bold',ops{4},10);
 H.text_altp1 = uicontrol('Style','text','Position',[750 550 150 20],'String','alt at periapse (km)',...
-    ops{1},'k',ops{2},'w',ops{3},'Bold',ops{4},10);
+    ops{1},'no',ops{2},'w',ops{3},'Bold',ops{4},10);
 H.text_alta1 = uicontrol('Style','text','Position',[750 500 150 20],'String','alt at apoapse (km)',...
-    ops{1},'k',ops{2},'w',ops{3},'Bold',ops{4},10);
+    ops{1},'no',ops{2},'w',ops{3},'Bold',ops{4},10);
 H.text_i1 = uicontrol('Style','text','Position',[750 450 150 20],'String','inclination = [0,180]',...
-    ops{1},'k',ops{2},'w',ops{3},'Bold',ops{4},10);
+    ops{1},'no',ops{2},'w',ops{3},'Bold',ops{4},10);
 H.text_R1 = uicontrol('Style','text','Position',[750 400 150 20],'String','RAAN = [0,360]',...
-    ops{1},'k',ops{2},'w',ops{3},'Bold',ops{4},10);
+    ops{1},'no',ops{2},'w',ops{3},'Bold',ops{4},10);
 H.text_w1 = uicontrol('Style','text','Position',[760 335 130 40],'String','argument of periapse = [0,360]',...
-    ops{1},'k',ops{2},'w',ops{3},'Bold',ops{4},10);
+    ops{1},'no',ops{2},'w',ops{3},'Bold',ops{4},10);
 H.altp1 = uicontrol('Style','edit','Position',[775 530 100 20],'String','200',...
-    ops{1},'k',ops{2},'w',ops{3},'Bold',ops{4},10);
+    ops{1},'no',ops{2},'w',ops{3},'Bold',ops{4},10);
 H.alta1 = uicontrol('Style','edit','Position',[775 480 100 20],'String','200',...
-    ops{1},'k',ops{2},'w',ops{3},'Bold',ops{4},10);
+    ops{1},'no',ops{2},'w',ops{3},'Bold',ops{4},10);
 H.i1 = uicontrol('Style','edit','Position',[775 430 100 20],'String','0',...
-    ops{1},'k',ops{2},'w',ops{3},'Bold',ops{4},10);
+    ops{1},'no',ops{2},'w',ops{3},'Bold',ops{4},10);
 H.R1 = uicontrol('Style','edit','Position',[775 380 100 20],'String','0',...
-    ops{1},'k',ops{2},'w',ops{3},'Bold',ops{4},10);
+    ops{1},'no',ops{2},'w',ops{3},'Bold',ops{4},10);
 H.w1 = uicontrol('Style','edit','Position',[775 315 100 20],'String','0',...
-    ops{1},'k',ops{2},'w',ops{3},'Bold',ops{4},10);
+    ops{1},'no',ops{2},'w',ops{3},'Bold',ops{4},10);
 
 % second orbit parameters
 H.text_orb2 = uicontrol('Style','text','Position',[890 575 150 20],'String','-- Final Orbit --',...
-    ops{1},'k',ops{2},'w',ops{3},'Bold',ops{4},10);
+    ops{1},'no',ops{2},'w',ops{3},'Bold',ops{4},10);
 H.text_altp2 = uicontrol('Style','text','Position',[890 550 150 20],'String','alt at periapse (km)',...
-    ops{1},'k',ops{2},'w',ops{3},'Bold',ops{4},10);
+    ops{1},'no',ops{2},'w',ops{3},'Bold',ops{4},10);
 H.text_alta2 = uicontrol('Style','text','Position',[890 500 150 20],'String','alt at apoapse (km)',...
-    ops{1},'k',ops{2},'w',ops{3},'Bold',ops{4},10);
+    ops{1},'no',ops{2},'w',ops{3},'Bold',ops{4},10);
 H.text_i2 = uicontrol('Style','text','Position',[890 450 150 20],'String','inclination = [0,180]',...
-    ops{1},'k',ops{2},'w',ops{3},'Bold',ops{4},10);
+    ops{1},'no',ops{2},'w',ops{3},'Bold',ops{4},10);
 H.text_R2 = uicontrol('Style','text','Position',[890 400 150 20],'String','RAAN = [0,360]',...
-    ops{1},'k',ops{2},'w',ops{3},'Bold',ops{4},10);
+    ops{1},'no',ops{2},'w',ops{3},'Bold',ops{4},10);
 H.text_w2 = uicontrol('Style','text','Position',[900 335 130 40],'String','argument of periapse = [0,360]',...
-    ops{1},'k',ops{2},'w',ops{3},'Bold',ops{4},10);
+    ops{1},'no',ops{2},'w',ops{3},'Bold',ops{4},10);
 H.altp2 = uicontrol('Style','edit','Position',[915 530 100 20],'String','200',...
-    ops{1},'k',ops{2},'w',ops{3},'Bold',ops{4},10);
+    ops{1},'no',ops{2},'w',ops{3},'Bold',ops{4},10);
 H.alta2 = uicontrol('Style','edit','Position',[915 480 100 20],'String','200',...
-    ops{1},'k',ops{2},'w',ops{3},'Bold',ops{4},10);
+    ops{1},'no',ops{2},'w',ops{3},'Bold',ops{4},10);
 H.i2 = uicontrol('Style','edit','Position',[915 430 100 20],'String','0',...
-    ops{1},'k',ops{2},'w',ops{3},'Bold',ops{4},10);
+    ops{1},'no',ops{2},'w',ops{3},'Bold',ops{4},10);
 H.R2 = uicontrol('Style','edit','Position',[915 380 100 20],'String','0',...
-    ops{1},'k',ops{2},'w',ops{3},'Bold',ops{4},10);
+    ops{1},'no',ops{2},'w',ops{3},'Bold',ops{4},10);
 H.w2 = uicontrol('Style','edit','Position',[915 315 100 20],'String','0',...
-    ops{1},'k',ops{2},'w',ops{3},'Bold',ops{4},10);
+    ops{1},'no',ops{2},'w',ops{3},'Bold',ops{4},10);
 
 % manual commands (all visible off unless manual animation style selected)
 % first burn
 H.text_burn1 = uicontrol('Style','text','Position',[1040 575 150 20],'String','-- First Burn --',...
-    ops{1},'k',ops{2},'w',ops{3},'Bold',ops{4},10); 
+    ops{1},'no',ops{2},'w',ops{3},'Bold',ops{4},10); 
 H.text_nu1 = uicontrol('Style','text','Position',[1050 530 130 40],'String','true anomaly in orbit = [0,360]',...
-    ops{1},'k',ops{2},'w',ops{3},'Bold',ops{4},10);
+    ops{1},'no',ops{2},'w',ops{3},'Bold',ops{4},10);
 H.text_dv1 = uicontrol('Style','text','Position',[1040 485 150 20],'String','delta v (km/s)',...
-    ops{1},'k',ops{2},'w',ops{3},'Bold',ops{4},10);
+    ops{1},'no',ops{2},'w',ops{3},'Bold',ops{4},10);
 H.text_imp1 = uicontrol('Style','text','Position',[1050 415 130 40],'String','thrust impulse angle = [0,360]',...
-    ops{1},'k',ops{2},'w',ops{3},'Bold',ops{4},10);
+    ops{1},'no',ops{2},'w',ops{3},'Bold',ops{4},10);
 H.text_th1 = uicontrol('Style','text','Position',[1040 345 150 40],'String','inclination change angle = [0,360]',...
-    ops{1},'k',ops{2},'w',ops{3},'Bold',ops{4},10);
+    ops{1},'no',ops{2},'w',ops{3},'Bold',ops{4},10);
 H.nu1 = uicontrol('Style','edit','Position',[1065 510 100 20],'String','0',...
-    ops{1},'k',ops{2},'w',ops{3},'Bold',ops{4},10);
+    ops{1},'no',ops{2},'w',ops{3},'Bold',ops{4},10);
 H.dv1 = uicontrol('Style','text','Position',[1065 465 100 20],'String','0',...
-    ops{1},'k',ops{2},'w',ops{3},'Bold',ops{4},10);
+    ops{1},'no',ops{2},'w',ops{3},'Bold',ops{4},10);
 H.imp1 = uicontrol('Style','text','Position',[1065 395 100 20],'String','0',...
-    ops{1},'k',ops{2},'w',ops{3},'Bold',ops{4},10);
+    ops{1},'no',ops{2},'w',ops{3},'Bold',ops{4},10);
 H.th1 = uicontrol('Style','text','Position',[1065 325 100 20],'String','0',...
-    ops{1},'k',ops{2},'w',ops{3},'Bold',ops{4},10);
+    ops{1},'no',ops{2},'w',ops{3},'Bold',ops{4},10);
 % second burn
 H.text_burn2 = uicontrol('Style','text','Position',[1180 575 150 20],'String','-- Second Burn --',...
-    ops{1},'k',ops{2},'w',ops{3},'Bold',ops{4},10); 
+    ops{1},'no',ops{2},'w',ops{3},'Bold',ops{4},10); 
 H.text_nu2 = uicontrol('Style','text','Position',[1190 530 130 40],'String','true anomaly in orbit = [0,360]',...
-    ops{1},'k',ops{2},'w',ops{3},'Bold',ops{4},10);
+    ops{1},'no',ops{2},'w',ops{3},'Bold',ops{4},10);
 H.text_dv2 = uicontrol('Style','text','Position',[1180 485 150 20],'String','delta v (km/s)',...
-    ops{1},'k',ops{2},'w',ops{3},'Bold',ops{4},10);
+    ops{1},'no',ops{2},'w',ops{3},'Bold',ops{4},10);
 H.text_imp2 = uicontrol('Style','text','Position',[1190 415 130 40],'String','thrust impulse angle = [0,360]',...
-    ops{1},'k',ops{2},'w',ops{3},'Bold',ops{4},10);
+    ops{1},'no',ops{2},'w',ops{3},'Bold',ops{4},10);
 H.text_th2 = uicontrol('Style','text','Position',[1180 345 150 40],'String','inclination change angle = [0,360]',...
-    ops{1},'k',ops{2},'w',ops{3},'Bold',ops{4},10);
+    ops{1},'no',ops{2},'w',ops{3},'Bold',ops{4},10);
 H.nu2 = uicontrol('Style','edit','Position',[1205 510 100 20],'String','0',...
-    ops{1},'k',ops{2},'w',ops{3},'Bold',ops{4},10);
+    ops{1},'no',ops{2},'w',ops{3},'Bold',ops{4},10);
 H.dv2 = uicontrol('Style','text','Position',[1205 465 100 20],'String','0',...
-    ops{1},'k',ops{2},'w',ops{3},'Bold',ops{4},10);
+    ops{1},'no',ops{2},'w',ops{3},'Bold',ops{4},10);
 H.imp2 = uicontrol('Style','text','Position',[1205 395 100 20],'String','0',...
-    ops{1},'k',ops{2},'w',ops{3},'Bold',ops{4},10);
+    ops{1},'no',ops{2},'w',ops{3},'Bold',ops{4},10);
 H.th2 = uicontrol('Style','text','Position',[1205 325 100 20],'String','0',...
-    ops{1},'k',ops{2},'w',ops{3},'Bold',ops{4},10);
+    ops{1},'no',ops{2},'w',ops{3},'Bold',ops{4},10);
 
-% set callbacks
+% set axes to display the thrust angles to the user
+H.disp = axes('Units','Pixels','Position',[900 -50 450 450],...
+    'xcolor','no','ycolor','no','zcolor','no','Color','no');
+set(H.disp,'View',[-42,35]);
+display(H);
+
+% set axes to plot orbits and animate
+H.ax = axes('Units','Pixels','Position',[-50 0 700 700],...
+    'xcolor','no','ycolor','no','zcolor','no','Color','no');
+H.ax.View = [-100,20];
+
+% set callback functions
 set(H.planets,'Callback',{@CB,H})
 set(H.animPref,'Callback',{@CB,H})
 set(H.speed,'Callback',{@CB,H})
@@ -148,7 +151,7 @@ set(H.imp2,'Callback',{@CB,H})
 end
 
 function CB(~,~,H)
-% set the correct visibilities depending on the selected animation style
+% set the correct styles depending on the selected animation style
 if get(H.animPref,'Value') == 1
     style1 = 'edit';
     style2 = 'text';
@@ -156,7 +159,6 @@ else
     style1 = 'text';
     style2 = 'edit';
 end
-
 set(H.altp2,'Style',style1)
 set(H.alta2,'Style',style1)
 set(H.i2,'Style',style1)
@@ -169,77 +171,83 @@ set(H.dv2,'Style',style2)
 set(H.th2,'Style',style2)
 set(H.imp2,'Style',style2)
 
-calcManual(H)
+% update the thrust angle display
+display(H)
+
+% continue to animation/calculation
+if get(H.animPref,'Value') == 1
+    calcAuto(H)
+elseif get(H.animPref,'Value') == 2
+    calcManual(H)
+end
 end
 
 function [a2,e2,i2,R2,w2,nu2] = calcs(a1,e1,i1,R1,w1,nu1,dv,imp,th,mu)
 a2 = a1; e2 = e1; i2 = i1; R2 = R1; w2 = w1; nu2 = nu1;
 if dv ~= 0
-    % orbital radius at first burn
-    r1 = a1*(1-e1^2)/(1+e1*cos(nu1));
+    % orbital radius at first burn and define initial position vector
+    r_mag = a1*(1-e1^2)/(1+e1*cos(nu1));
+    r_vec = transpose(DCM323([r_mag*cos(nu1);r_mag*sin(nu1);0],i1,R1,w1));
 
-    % use position derivative to define the intial velocity as vector
-    dydx = sqrt(1-e1^2)*(r1*cos(nu1)/a1+e1)/sqrt(1-(r1*cos(nu1)/a1+e1)^2);
-    v0 = [sqrt(mu*(2/r1-1/a1))*cos(atan(dydx)),sqrt(mu*(2/r1-1/a1))*sin(atan(dydx))];
+    % use position derivative to define the initial velocity vector
+    dydx = sqrt(1-e1^2)*(r_mag*cos(nu1)/a1+e1)/sqrt(1-(r_mag*cos(nu1)/a1+e1)^2);
+    v0 = sqrt(mu*(2/r_mag-1/a1)).*[cos(atan(dydx));sin(atan(dydx));0];
     [v0(1),v0(2)] = checkVelocity(v0(1),v0(2),nu1);
-    
-    % define initial position as vector
-    r0 = [r1*cos(abs(nu1)),r1*sin(abs(nu1))];
-    if nu1 > 0 && nu1 < pi
-        r0(2) = -r0(2);
-    end
-    if nu1 > 3*pi/2 && nu1 < pi/2
-        r0(1) = -r0(1);
-    end
+    v0 = transpose(DCM323(v0,i1,R1,w1));
     
     % define delta v as vector
-    dv_vec = [dv*sin(nu1-imp)*sin(th),dv*cos(nu1-imp)*sin(th),dv*cos(th)];
+    dv_vec = dv*[sin(nu1-imp)*sin(th),-cos(nu1-imp)*sin(th),cos(th)];
     
     % define final velocity as vector
-    beta = acos((r0(1)*v0(1)+r0(2)*v0(2))/sqrt(mu*(2/r1-1/a1))/r1);
-    vf = [v0(1)+dv_vec(1),v0(2)+dv_vec(2),dv_vec(3)];
-    vf2 = sqrt(dv^2+mu*(2/r1-1/a1)-2*sqrt(mu*(2/r1-1/a1))*dv*cos(pi/2-imp+beta));
-    fprintf('%2.2f   %2.2f   %2.2f   %2.2f\n',vf2,vf(1),vf(2),vf(3))
+    vf = [v0(1)+dv_vec(1),v0(2)+dv_vec(2),v0(3)+dv_vec(3)];
     
-    % calculate semi major axis
-    a2 = 1./(2/r1-sqrt(vf(1)^2+vf(2)^2+vf(3)^2)./mu);
+    % specific angular momentum
+    L = [r_vec(2)*vf(3)-r_vec(3)*vf(2),r_vec(3)*vf(1)-r_vec(1)*vf(3),r_vec(1)*vf(2)-r_vec(2)*vf(1)];
+    Lsquared = L(1)^2+L(2)^2+L(3)^2;
     
-    % before calculating eccentricity, make sure the signs are correct
-    [vf(1),vf(2)] = checkVelocity(vf(1),vf(2),nu1);
-
-    % calculate eccentricity
-    e2 = sqrt(1-((r1*cos(nu1)*vf(2)-r1*sin(nu1)*vf(1))^2)/mu/a2);
+    % compute semi major axis
+    a2 = 1./(2/r_mag-(vf(1)^2+vf(2)^2+vf(3)^2)./mu);
+    
+    % compute eccentricity
+    e2 = sqrt(1-Lsquared/mu/a2);
     if ~isreal(e2)
         e2 = 0;
     end
     
-    % calculate true anomaly in second orbit
-    nu2 = acos((a2*(1-e2^2)/r1-1)/e2);
+    % compute true anomaly
+    nu2 = acos((a2*(1-e2^2)/r_mag-1)/e2);
     if ~isreal(nu2)
         nu2 = 0;
     end
     
-    % find RAAN for the orbit
-    if nu1 > 180 %&& nu2 > 180
-        R2 = -R1 + nu1 - nu2;
-    else
-        R2 = R1 + nu1 - nu2;
-    end
-
-    % find argument of periapse for the orbit
-    w2 = w1;
-    i2 = i1;
+    % compute inclination
+    i2 = asin(sqrt(L(1)^2+L(2)^2)/sqrt(Lsquared));
+    %i22 = acos(L(3)/sqrt(Lsquared));
+    
+    % compute RAAN
+    R2 = asin(L(1)/sqrt(Lsquared)/sin(i2));
+    %R22 = acos(-L(2)/sqrt(Lsquared)/sin(i2));
+    
+    % compute argument of periapse
+    w2 = acos((sqrt(Lsquared)*vf(3)/mu-(L(1)*r_vec(2)-L(2)*r_vec(1))/...
+        (sqrt(Lsquared)*r_mag))/(e2*sin(i2)));
+    %w22 = asin(((vf(1)*L(2)-vf(2)*L(1))/mu-r_vec(3)/r_mag)/e2/sin(i2));
+    
+    %fprintf('%2.2f  %2.2f  %2.2f  %2.2f  %2.2f  %2.2f  \n',i2,i22,R2,R22,w2,w22);
 end
+end
+
+function calcAuto(H)
+[a1,e1,i1,R1,w1,nu1,a2,e2,i2,R2,w2,nu2,sp,~,~,~,~,~,~,mu,R,col] = parameters(H);
 end
 
 function calcManual(H)
 % read in all data
-[a1,e1,i1,R1,w1,nu1,~,~,~,~,~,nu2,sp,dv1,dv2,imp1,imp2,th1,th2,mu,R,col] = read(H);
+[a1,e1,i1,R1,w1,nu1,~,~,~,~,~,nu2,sp,dv1,dv2,imp1,imp2,th1,th2,mu,R,col] = parameters(H);
 
 % calculate orbital parameters depending on user inputs
-[aT,eT,iT,RT,wT,nuT] = findOrb(a1,e1,i1,R1,w1,nu1,dv1,imp1,th1,mu);
-%[aT,eT,iT,RT,wT,nuT] = calcs(a1,e1,i1,R1,w1,nu1,dv1,imp1,th1,mu);
-[a2,e2,i2,R2,w2,nu3] = findOrb(aT,eT,iT,RT,wT,nuT,dv2,imp2,th2,mu);
+[aT,eT,iT,RT,wT,nuT] = calcs(a1,e1,i1,R1,w1,nu1,dv1,imp1,th1,mu);
+[a2,e2,i2,R2,w2,nu3] = calcs(aT,eT,iT,RT,wT,nuT,dv2,imp2,th2,mu);
 
 % reset text values for user display
 altp2 = a2*(1-e2)-R;
@@ -252,20 +260,18 @@ set(H.w2,'String',sprintf('%2.0f',w2));
 
 % calculate the orbits
 [x1,y1,z1] = ellipse(a1,e1,i1,R1,w1,mu);
-[xT,yT,zT] = ellipse(aT,eT,iT,RT+pi,wT,mu);
-[x2,y2,z2] = ellipse(a2,e2,i2,R2+pi,w2,mu);
+[xT,yT,zT] = ellipse(aT,eT,iT,RT,wT,mu);
+[x2,y2,z2] = ellipse(a2,e2,i2,R2,w2,mu);
 
 % find index for animation
 r1 = a1*(1-e1^2)/(1+e1*cos(nu1));
 ind1 = checkAngle(findIndex(x1,y1,z1,r1,nu1),1,360);
 r2 = aT*(1-eT^2)/(1+eT*cos(nuT));
-ind2 = checkAngle(findIndex(xT,yT,zT,r2,nuT)+180,1,360);
+ind2 = checkAngle(findIndex(xT,yT,zT,r2,nuT),1,360);
 r3 = aT*(1-eT^2)/(1+eT*cos(nu2));
-ind3 = checkAngle(findIndex(xT,yT,zT,r3,nu2)+180,1,360);
+ind3 = checkAngle(findIndex(xT,yT,zT,r3,nu2),1,360);
 r4 = a2*(1-e2^2)/(1+e2*cos(nu3));
-ind4 = checkAngle(findIndex(x2,y2,z2,r4,nu3)+180,1,360);
-
-%fprintf('%2.2f  %2.2f  %2.2f  %2.2f\n',ind1,ind2,ind3,ind4);
+ind4 = checkAngle(findIndex(x2,y2,z2,r4,nu3),1,360);
 
 % calculate the path of the satellite
 if ind1 < 90 
@@ -298,12 +304,12 @@ end
 prevView = H.ax.View;
 
 % plot orbits
-plot3(ax,zeros(size(ax)),zeros(size(ax)),'r',zeros(size(ax)),ax,zeros(size(ax)),'g',...
+plot3(H.ax,ax,zeros(size(ax)),zeros(size(ax)),'r',zeros(size(ax)),ax,zeros(size(ax)),'g',...
     zeros(size(ax)),zeros(size(ax)),ax,'b','LineWidth',2);
-hold on;
-%plot3(x1,y1,z1,'w',xT,yT,zT,'y',x2,y2,z2,'c');
-plot3(path(1,:),path(2,:),path(3,:),'g');
-set(gca,'Color','no','xcolor','no','ycolor','no','zcolor','no')
+hold(H.ax,'on');
+%plot3H.ax,(x1,y1,z1,'w',xT,yT,zT,'y',x2,y2,z2,'c');
+plot3(H.ax,path(1,:),path(2,:),path(3,:),'g');
+set(H.ax,'Color','no','xcolor','no','ycolor','no','zcolor','no')
 if get(H.pref,'Value') == 1
     rotate3d on;
 elseif get(H.pref,'Value') == 2
@@ -313,10 +319,10 @@ end
 % create the objects for the 
 ind = 1;
 [x,y,z] = sphere;
-surf(axlim*x/12,axlim*y/12,axlim*z/12,'EdgeColor','none','FaceColor',col);
-sat = surf(axlim*x/15+x1(ind),axlim*y/15+y1(ind),axlim*z/15+z1(ind),...
+surf(H.ax,axlim*x/12,axlim*y/12,axlim*z/12,'EdgeColor','none','FaceColor',col);
+sat = surf(H.ax,axlim*x/15+x1(ind),axlim*y/15+y1(ind),axlim*z/15+z1(ind),...
     'EdgeColor','none','FaceColor','g');
-hold off;
+hold(H.ax,'off');
 
 % apply previous view
 H.ax2.View = prevView;
@@ -366,76 +372,7 @@ else
 end
 end
 
-function [a2,e2,i2,R2,w2,nu2] = findOrb(a1,e1,i1,R1,w1,nu1,dv,imp,th,mu)
-if dv == 0 
-    a2 = a1; e2 = e1; i2 = i1; R2 = R1; w2 = w1; nu2 = nu1;
-else
-    % orbital radius at first burn
-    r1 = a1*(1-e1^2)/(1+e1*cos(nu1));
-
-    % new magnitude of velocity after first burn
-    %vf = sqrt(mu*(2/r1-1/a1))+dv;
-    dydx = sqrt(1-e1^2)*(r1*cos(nu1)/a1+e1)/sqrt(1-(r1*cos(nu1)/a1+e1)^2);
-    v0x = sqrt(mu*(2/r1-1/a1))*cos(atan(dydx));
-    v0y = sqrt(mu*(2/r1-1/a1))*sin(atan(dydx));
-    [v0x,v0y] = checkVelocity(v0x,v0y,nu1);
-    r0x = r1*cos(abs(nu1));
-    r0y = r1*sin(abs(nu1));
-    if nu1 > 0 && nu1 < pi
-        r0y = -r0y;
-    end
-    if nu1 > 3*pi/2 && nu1 < pi/2
-        r0x = -r0x;
-    end
-    beta = acos((r0x*v0x+r0y*v0y)/sqrt(mu*(2/r1-1/a1))/r1);
-    vf = sqrt(dv^2+mu*(2/r1-1/a1)-2*sqrt(mu*(2/r1-1/a1))*dv*cos(pi/2-imp+beta));
-    
-    if nu1 < pi
-        dvx = -dv*cos(pi/2+nu1-imp);
-        dvy = -dv*sin(pi/2+nu1-imp);
-    else
-        dvx = -dv*cos(-pi/2+nu1-imp);
-        dvy = -dv*sin(-pi/2+nu1-imp);
-    end
-    ang = acos((dvx*v0x+dvy*v0y)/dv/sqrt(mu*(2/r1-1/a1)));
-    
-    % semi major axis of transfer ellipse
-    a2 = 1/(2/r1-(vf^2)/mu);
-
-    % find the component velocities to calculate eccentricity
-    vfx = vf*cos(atan(sqrt(1-e1^2)*(r1*cos(nu1)/a1+e1)/sqrt(1-(r1*cos(nu1)/a1+e1)^2)));
-    vfy = vf*sin(atan(sqrt(1-e1^2)*(r1*cos(nu1)/a1+e1)/sqrt(1-(r1*cos(nu1)/a1+e1)^2)));
-
-    % before calculating eccentricity, make sure the signs are correct
-    [vfx,vfy] = checkVelocity(vfx,vfy,nu1);
-
-    % calculate eccentricity
-    e2 = sqrt(1-((r1*cos(nu1)*vfy-r1*sin(nu1)*vfx)^2)/mu/a2);
-    if ~isreal(e2)
-        e2 = 0;
-    end
-
-    % find the true anomaly of the second orbit at the first burn
-    nu2 = acos((a2*(1-e2^2)/r1-1)/e2);
-    % alternate form :nuT = acos((aT*(1-eT^2)*(new_vel*new_vel/mu+1/aT)/2-1)/eT);
-    if ~isreal(nu2)
-        nu2 = 0;
-    end
-
-    % find RAAN for the orbit
-    if nu1 > 180 %&& nu2 > 180
-        R2 = -R1 + nu1 - nu2;
-    else
-        R2 = R1 + nu1 - nu2;
-    end
-
-    % find argument of periapse for the orbit
-    w2 = w1;
-    i2 = i1;
-end
-end
-
-function [a1,e1,i1,R1,w1,nu1,a2,e2,i2,R2,w2,nu2,sp,dv1,dv2,imp1,imp2,th1,th2,mu,R,col] = read(H)
+function [a1,e1,i1,R1,w1,nu1,a2,e2,i2,R2,w2,nu2,sp,dv1,dv2,imp1,imp2,th1,th2,mu,R,col] = parameters(H)
 % read in the data to retrieve the planet the user selected and define the
 % standard gravitational parameter and color accordingly
 if get(H.planets,'Value') == 1
@@ -611,67 +548,151 @@ while var > high
 end
 end
 
-function display(ax)
-% create random ellitical orbit
-[x,y,z] = ellipse(100,.5,0,0,0,1);
-% calculate radius to display (true anomaly = 120)
-r = [0,-50;0,86.6;0,0];
-% vertical line through the position in the orbit
-vert = [-50,-50;86.6,86.6;-100,100];
-% horizaontal line perpendicular to the radius vector
-perp = [-200,25;0,130;0,0];
-% delta v vector
-dv_arrow = [-50,-111.2;86.6,122;0,70.7];
-dv_arrow_proj = [-50,-111.2;86.6,122;0,0];
-dv_arrow_vert = [-111.2,-111.2;122,122;0,70.7];
-dv_arrow_head = [-93.9,-111.2,-101.2;122,122,104.7;56.6,70.7,56.6];
-% angle vectors (the arrowheads are all at 30 degree angles)
-th = linspace(0,2*pi,360);
-nu = [30*cos(th(1:120));30*sin(th(1:120));zeros(size(th(1:120)))];
-nu_arrow_head = [-5,-15,-10;26,26,34.7;0,0,0];
-% dcm1 = [cos(60),-sin(60),0;sin(60),cos(60),0;0,0,1]
-imp = [50*cos(th(1:60))*cos(5*pi/6)-50*sin(th(1:60))*sin(5*pi/6)-50;...
-    50*cos(th(1:60))*sin(5*pi/6)+50*sin(th(1:60))*cos(5*pi/6)+86.6;zeros(size(th(1:60)))];
-imp_arrow_head = [-102,-93.3,-93.3;106.6,111.6,101.6;0,0,0];
-% dcm2 = [1,0,0;0,cos(45),-sin(45);0,sin(45),cos(45)]
-% dcm3 = [cos(60),-sin(60),0;sin(60),cos(60),0;0,0,1]
-inc = [(50*cos(th(1:45))*cos(pi/4)-50*sin(th(1:45))*sin(pi/4))*-sin(pi/3)-50;...
-    (50*cos(th(1:45))*cos(pi/4)-50*sin(th(1:45))*sin(pi/4))*cos(pi/3)+86.6;...
-    50*cos(th(1:45))*sin(pi/4)+50*sin(th(1:45))*cos(pi/4)];
-inc_arrow_head = [-78.1,-80.6,-72;100.4,104.7,99.7;44.2,35.4,35.4];
+function display(H)
+% read parameters to display the thrust elements to the user
+[a,e,i,R,w,nu,~,~,~,~,~,~,~,~,~,imp,~,inc,~,mu,PR,col] = parameters(H); 
 
-% x and y axis limits
-limitx = linspace(-225,75,10);
-limity = linspace(-100,100,10);
-plot3(ax,dv_arrow(1,:),dv_arrow(2,:),dv_arrow(3,:),'y',...
-    imp(1,:),imp(2,:),imp(3,:),'g',...
-    inc(1,:),inc(2,:),inc(3,:),'b',...
-    nu(1,:),nu(2,:),nu(3,:),'m',...
-    r(1,:),r(2,:),r(3,:),'r',...
-    x,y,z,'w',...
-    vert(1,:),vert(2,:),vert(3,:),'--w',...
-    perp(1,:),perp(2,:),perp(3,:),'--w',...
-    dv_arrow_proj(1,:),dv_arrow_proj(2,:),dv_arrow_proj(3,:),'--w',...
-    dv_arrow_vert(1,:),dv_arrow_vert(2,:),dv_arrow_vert(3,:),'--w',...
-    limitx,zeros(size(limitx)),zeros(size(limitx)),':w',...
-    zeros(size(limity)),limity,zeros(size(limity)),':w',...
-    zeros(size(limity)),zeros(size(limity)),limity,':w');
-hold on;
-triang(dv_arrow_head(1,:),dv_arrow_head(2,:),dv_arrow_head(3,:),'y');
-triang(imp_arrow_head(1,:),imp_arrow_head(2,:),imp_arrow_head(3,:),'g');
-triang(inc_arrow_head(1,:),inc_arrow_head(2,:),inc_arrow_head(3,:),'b');
-triang(nu_arrow_head(1,:),nu_arrow_head(2,:),nu_arrow_head(3,:),'m');
-set(gca,'Color','no','xcolor','no','ycolor','no','zcolor','no');
+% coordinates for orbit and sphere, and set axis limit
+[x,y,z] = ellipse(a,e,-i,R,w,mu);
 [xs,ys,zs] = sphere;
-surf(ax,13*xs,13*ys,13*zs,'EdgeColor','no','FaceColor','y');
-surf(ax,5*xs-50,5*ys+86.6,5*zs,'EdgeColor','no','FaceColor','c');
-axis equal;
-hold off;
-legend({'delta v','impulse angle','inclination angle','true anomaly','orbital radius'},...
-    'Location',[.8033 .1 .0948 .1433],'TextColor','w','Color','k','Box','on');
+axis_lim = linspace(-1.2*a*(1+e),1.2*a*(1+e),3);
+
+% save previous view
+prevView = H.disp.View;
+
+% radius as scalar and vector
+r = a*(1-e^2)/(1+e*cos(nu))*[cos(nu);sin(nu);0];
+r = DCM323(r,i,R,w);
+r = [r(1,1),r(2,1),r(3,1)];
+quiver3(H.disp,0,0,0,r(1),r(2),r(3),'-r','filled','LineWidth',2,'AutoScale','off')
+hold(H.disp,'on')
+
+% delta v vector (not to scale, only to demonstrate the direction)
+dv = .5*a*[-sin(nu-imp)*sin(inc);cos(nu-imp)*sin(inc);cos(inc)];
+dv = DCM323(dv,i,R,w);
+dv = 100*[dv(1,1),dv(2,1),dv(3,1)];
+quiver3(H.disp,r(1),r(2),r(3),dv(1),dv(2),dv(3),'-y','LineWidth',2,'AutoScaleFactor',.01)
+
+% reference line for periapse
+arg = [axis_lim(1),axis_lim(3);0,0;0,0];
+arg = DCM323(arg,i,R,w);
+
+% reference line for thrust inclination angle
+vert = [0,0;0,0;min(axis_lim),max(axis_lim)];
+vert = DCM323(vert,i,R,w);
+vert = [vert(1,:)+r(1);vert(2,:)+r(2);vert(3,:)+r(3)];
+
+% reference line for thrust impulse angle
+perp = [0,-a*cos(nu-pi/2)/1.5;0,-a*sin(nu-pi/2)/1.5;0,0];
+perp = DCM323(perp,i,R,w);
+perp = [perp(1,:)+r(1);perp(2,:)+r(2);perp(3,:)+r(3)];
+
+% projection of the delta v vector in the orbital plane
+if inc == 0
+    dv_proj = [0,0;0,0;0,0];
+else
+    dv_proj = DCM323([0,.5*a;0,0;0,0],0,pi/2-imp,0);
+    dv_proj = [dv_proj(1,:)+a*(1-e^2)/(1+e*cos(nu));dv_proj(2,:);zeros(size(dv_proj(3,:)))];
+    dv_proj = DCM323(dv_proj,i,R,w+nu);
 end
 
-function triang(x,y,z,col)
-tri = delaunay(x,y);
-trisurf(tri,x,y,z,'EdgeColor','no','FaceColor',col);
+% add arrows -- draw arcs and add arrow at the end
+th = linspace(0,2*pi,180);
+
+% predefine string for the legend and redefine if any of the angles = 0
+str = {'orbital radius','delta v','true anomaly','inclination angle',...
+    'impulse angle','reference direction'};
+
+% the first index to check for redefining the legend
+n = 3;
+
+% true anomaly arrow
+if nu == 0
+    str = {str{1:n-1},str{n+1:n+3}};
+    nu_curve = [0;0;0];
+else
+    nu_curve = .5*a*(1-e)*[cos(th(1:floor(nu*180/pi/2)));sin(th(1:floor(nu*180/pi/2)));zeros(1,floor(nu*180/pi/2))];
+    nu_curve = DCM323(nu_curve,i,R,w);
+    nu_arr = 100*[nu_curve(1,end)-nu_curve(1,end-1),nu_curve(2,end)-nu_curve(2,end-1),...
+        nu_curve(3,end)-nu_curve(3,end-1)];
+    nu_ind = length(nu_curve)-1;
+    quiver3(H.disp,nu_curve(1,nu_ind),nu_curve(2,nu_ind),nu_curve(3,nu_ind),...
+        nu_arr(1),nu_arr(2),nu_arr(3),'-b','LineWidth',2,'AutoScaleFactor',.01);
+    n = n + 1;
+end
+
+% inclination change angle arrow
+if inc == 0
+    str = {str{1:n-1},str{n+1:n+2}};
+    inc_curve = [0;0;0];
+else
+    inc_curve = .35*a*[sin(th(1:floor(inc*180/pi/2)));zeros(1,floor(inc*180/pi/2));cos(th(1:floor(inc*180/pi/2)))];
+    inc_curve = DCM323(inc_curve,0,pi/2-imp,0);
+    inc_curve = [inc_curve(1,:)+a*(1-e^2)/(1+e*cos(nu));inc_curve(2,:);inc_curve(3,:)];
+    inc_curve = DCM323(inc_curve,i,R,w+nu);
+    inc_arr = 100*[inc_curve(1,end)-inc_curve(1,end-1),inc_curve(2,end)-inc_curve(2,end-1),...
+        inc_curve(3,end)-inc_curve(3,end-1)];
+    inc_ind = length(inc_curve)-1;
+    quiver3(H.disp,inc_curve(1,inc_ind),inc_curve(2,inc_ind),inc_curve(3,inc_ind),...
+        inc_arr(1),inc_arr(2),inc_arr(3),'-g','LineWidth',2,'AutoScaleFactor',.01);
+    n = n + 1;
+end
+
+% impulse angle arrow
+if imp == 0
+    str = {str{1:n-1},str{n+1}};
+    imp_curve = [0;0;0];
+else
+    imp_curve = .35*a*[-sin(th(1:floor(imp*180/pi/2)));cos(th(1:floor(imp*180/pi/2)));zeros(1,floor(imp*180/pi/2))];
+    imp_curve = DCM323(imp_curve,0,-imp+(3/180)*pi,0);
+    imp_curve = [imp_curve(1,:)+a*(1-e^2)/(1+e*cos(nu));imp_curve(2,:);imp_curve(3,:)];
+    imp_curve = DCM323(imp_curve,i,R,w+nu);
+    imp_arr = 100*[imp_curve(1,1)-imp_curve(1,2);imp_curve(2,1)-imp_curve(2,2);...
+        imp_curve(3,1)-imp_curve(3,2)];
+    quiver3(H.disp,imp_curve(1,1),imp_curve(2,1),imp_curve(3,1),...
+        imp_arr(1),imp_arr(2),imp_arr(3),'-m','filled','LineWidth',2,'AutoScaleFactor',.01);
+end
+
+% plot the curves and reference direction
+plot3(H.disp,arg(1,:),arg(2,:),arg(3,:),'--w',...
+    nu_curve(1,:),nu_curve(2,:),nu_curve(3,:),'b',...
+    inc_curve(1,:),inc_curve(2,:),inc_curve(3,:),'g',...
+    imp_curve(1,:),imp_curve(2,:),imp_curve(3,:),'m','LineWidth',2);
+
+% plot the axes, horizontal and vertical reference lines for the thrust,
+% the in plane projection of the delta v vector, and the orbit itself
+plot3(H.disp,axis_lim,zeros(size(axis_lim)),zeros(size(axis_lim)),':w',...
+    zeros(size(axis_lim)),axis_lim,zeros(size(axis_lim)),':w',...
+    zeros(size(axis_lim)),zeros(size(axis_lim)),axis_lim,':w',...
+    perp(1,:),perp(2,:),perp(3,:),'--w',...
+    vert(1,:),vert(2,:),vert(3,:),'--w',...
+    dv_proj(1,:),dv_proj(2,:),dv_proj(3,:),'--w',...
+    x,y,z,'w');
+
+% plot the central and orbiting bodies
+surf(H.disp,2*(PR^(2/3))*xs,2*(PR^(2/3))*ys,2*(PR^(2/3))*zs,'EdgeColor','no','FaceColor',col);
+surf(H.disp,(PR^(2/3))*xs+r(1),(PR^(2/3))*ys+r(2),(PR^(2/3))*zs+r(3),'EdgeColor','no','FaceColor','c');
+
+% set axis background, limits, and legend, and allow rotation
+set(H.disp,'Color','no','xcolor','no','ycolor','no','zcolor','no');
+xlim([-1.2*a*(1+e) 1.2*a*(1+e)]);
+axis(H.disp,'equal')
+legend(H.disp,str,'Location','EastOutside','TextColor','w','Color','k','Box','on');
+rotate3d(H.disp,'on')
+hold(H.disp,'off')
+
+% hold the new view
+H.disp.View = prevView;
+end
+
+function OUT = DCM323(IN,i,R,w)
+% this will be the direction cosine matrix for a typical orbital euler
+% angle set (3-2-3), with the variable IN being a 3D column vector or a 
+% 3xN matrix where N may be any positive integer
+dcm = [cos(R)*cos(w)*cos(i)-sin(R)*sin(w),-cos(R)*cos(i)*sin(w)-sin(R)*cos(w),-cos(R)*sin(i);...
+    sin(R)*cos(w)*cos(i)+cos(R)*sin(w),-sin(R)*sin(w)*cos(i)+cos(R)*cos(w),-sin(R)*sin(i);...
+    sin(i)*cos(w),-sin(i)*sin(w),cos(i)];
+OUT(1,:) = IN(1,:)*dcm(1,1)+IN(2,:)*dcm(1,2)+IN(3,:)*dcm(1,3);
+OUT(2,:) = IN(1,:)*dcm(2,1)+IN(2,:)*dcm(2,2)+IN(3,:)*dcm(2,3);
+OUT(3,:) = IN(1,:)*dcm(3,1)+IN(2,:)*dcm(3,2)+IN(3,:)*dcm(3,3);
 end
