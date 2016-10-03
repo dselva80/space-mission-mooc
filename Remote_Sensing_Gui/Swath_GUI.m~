@@ -511,15 +511,14 @@ function Swath_GUI
        end
        
        [ del_x ] = spatial_resolution(h,lambda,D );
-       del_xoutput.String = strcat(num2str(del_x,'%10.2e'),' m');
-       area = round(pi*(locx/2)^2);
-       swath_area_output.String = strcat(num2str(area,'%10.2e'),' km^2');
+       del_xoutput.String = strcat(num2str(del_x),' m');
        
        if val == 1
             %conical swath
             ground_voutput.String = '';
             int_toutput.String = '';
-            
+            area = round(pi*(locx/2)^2);
+            swath_area_output.String = strcat(num2str(area,'%10.2e'),' km^2');
             nadirtext.Visible = 'on';
             nadiredit.Visible = 'on';
             tracktext.Visible='on';
@@ -545,7 +544,6 @@ function Swath_GUI
             alongedit.Visible = 'on';
             crosstext.Visible='on';
             crossedit.Visible='on';
-            
         else
             %pushbroom
             [ int_t, ground_v,data_rate ] = pushbroom( h,vel(1),del_x,Nx,Nband,bits);
@@ -570,12 +568,15 @@ function Swath_GUI
        [latg, long] = Sat_orbit( a,e,i,RAAN,v,w,10*num_P,1,dt);
        
        [ ~,~,r ] = swath( alt(1)/Re, FOV, latg(1), long(1));
-       [ ~,~,r_nadir ] = swath( alt(1)/Re, nadir, latg(1), long(1));
+       [ ~,~,r_gnadir ] = swath( alt(1)/Re, nadir, latg(1), long(1));
         
-       r_actview = r-r_nadir;
+       r_actview = r-r_gnadir;
+       
+       r_nadir = r_gnadir+r_actview;
         
        [ ~,~,~,locx] = swath( ...
                 alt(1)/Re,r_actview, latg(1), long(1));
+       
        
         
         % here i set up handles so i can update them in the loop.
@@ -788,7 +789,7 @@ function Swath_GUI
                 
                 
 %                 % conical animation on globe
-                [nadcirc_lat,nadcirc_lon] = scircle1(lat(stop),lon(stop),r_nadir);
+                [nadcirc_lat,nadcirc_lon] = scircle1(latg(stop),long(stop),r_nadir);
                 nadcirc_lat = real(nadcirc_lat);
                 nadcirc_lon = real(nadcirc_lon);
                 %%%
@@ -883,6 +884,7 @@ function Swath_GUI
                 cone_z.ZData=real(zsurf);
                 cone_z.Visible = 'on';
                 axis(hzoom,'off')
+                drawnow
                 
                 
                
@@ -926,11 +928,8 @@ function Swath_GUI
                 setm(hzoom,'Origin',originz,'FLatLimit',[-Inf (larger_angle/3)])
                 axis(hzoom,'off')
 
-                % xyz on orthogonal projection are not the same as on the
-                % globe. Scaled theglobe ECEF xyz down by a factor of 40
-                % and it looks roughly correct
-                xcone= swing/40 + r_actview/40 * cos(ang);
-                ycone=  r_actview/40 * sin(ang);
+                xcone= swing/30 + r_actview/20 * cos(ang);
+                ycone=  r_actview/20 * sin(ang);
                 xcirc2 = xcone+x5;
                 ycirc2 = ycone+y5;
                 xsurf = zeros(2,length(xcirc2));
@@ -952,7 +951,7 @@ function Swath_GUI
                 cone_z.Visible = 'on';
                     
                 
-               
+                drawnow
                 
                 
             else
@@ -993,11 +992,8 @@ function Swath_GUI
                 cone_anim.ZData = zsurf;
 
                 % plot cone on zoom
-                % xyz on orthogonal projection are not the same as on the
-                % globe. Scaled theglobe ECEF xyz down by a factor of 40
-                % and it looks roughly correct
-                xcone = r_actview/40*cos(ang);
-                ycone = swing/40 +r_actview/40*sin(ang);
+                xcone = r_actview/20*cos(ang);
+                ycone = swing/30 +r_actview/20*sin(ang);
                 xcirc2 = xcone+x5;
                 ycirc2 = ycone+y5;
                 xsurf = zeros(2,length(xcirc2));
@@ -1022,7 +1018,7 @@ function Swath_GUI
                 origin = [round(latout) round(lonout) -heading(stop)];
                 setm(hswath,'Origin',origin,'FLatLimit',[-Inf r_actview])
                 
-                
+                drawnow
                     
                     
             end
@@ -1094,11 +1090,10 @@ function Swath_GUI
             diamtext.String = str;
             diamtext.Position = [x2-x1/8 y2-y1/4];
             
-%             swathgeo.CData(rmin:rmax,cmin:cmax,:) = C(rmin:rmax,cmin:cmax,:);
-            swathgeo.CData = A;
+            swathgeo.CData(rmin:rmax,cmin:cmax,:) = C(rmin:rmax,cmin:cmax,:);
             
            
-            drawnow
+
         end
         
      elseif button_state == hObject.Min

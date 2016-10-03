@@ -1,5 +1,5 @@
 
-function [xsurf, ysurf, zsurf] = conical_animation(r,h,lat,lon)
+function [xsurf, ysurf, zsurf] = conical_animation(r,h,latg,long,lat,lon)
 % This function takes 2 LAT/LON/ALT locations and draws a cone.
 % Meant to be used as a satellite sensor FOV visual
 
@@ -15,7 +15,7 @@ function [xsurf, ysurf, zsurf] = conical_animation(r,h,lat,lon)
 
     earth = referenceEllipsoid('earth');
     
-    [circlat,circlon] = scircle1(lat,lon,r);
+    [circlat,circlon] = scircle1(latg,long,r);
 
     [xh,yh,zh] = geodetic2ecef(earth,lat,lon,h);
 
