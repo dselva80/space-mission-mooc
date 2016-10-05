@@ -511,15 +511,18 @@ function Swath_GUI
        end
        
        [ del_x ] = spatial_resolution(h,lambda,D );
-       del_xoutput.String = strcat(num2str(del_x,'%10.2e'),' m');
-       area = round(pi*(locx/2)^2);
-       swath_area_output.String = strcat(num2str(area,'%10.2e'),' km^2');
+       del_xoutput.String = strcat(num2str(del_x),' m');
+        % calulates altitude, longitude and latitude of satellite orbit
+       [lat, lon, alt, P,vel] = Sat_orbit( a,e,i,RAAN,v,w,10*num_P,0,dt);
+       alt=alt*Re;
+       ground_v = Re*vel(1) / (Re+alt(1));
+       ground_voutput.String = strcat(num2str(round(ground_v)),' m/s');
        
        if val == 1
             %conical swath
-            ground_voutput.String = '';
             int_toutput.String = '';
-            
+            area = round(pi*(locx/2)^2);
+            swath_area_output.String = strcat(num2str(area,'%10.2e'),' km^2');
             nadirtext.Visible = 'on';
             nadiredit.Visible = 'on';
             tracktext.Visible='on';
@@ -533,8 +536,8 @@ function Swath_GUI
            
        elseif val ==2
             % cross track
-            [ int_t, ground_v,data_rate ] = whiskbroom( h,vel(1),del_x,Nx,Ny,locx,bits,Nband);
-            ground_voutput.String = strcat(num2str(round(ground_v)),' m/s');
+            [ int_t, data_rate ] = whiskbroom( ground_v,del_x,Nx,Ny,bits,Nband);
+            
             int_toutput.String = strcat(num2str(int_t*1000),' ms');
             data_rate_output.String = strcat(num2str(data_rate/1e6,'%10.2e'),' Mbps');
             nadirtext.Visible = 'off';
@@ -545,11 +548,9 @@ function Swath_GUI
             alongedit.Visible = 'on';
             crosstext.Visible='on';
             crossedit.Visible='on';
-            
         else
             %pushbroom
-            [ int_t, ground_v,data_rate ] = pushbroom( h,vel(1),del_x,Nx,Nband,bits);
-            ground_voutput.String = strcat(num2str(round(ground_v)),' m/s');
+            [ int_t, data_rate ] = pushbroom( ground_v,del_x,Nx,Nband,bits);
             int_toutput.String = strcat(num2str(int_t*1000),' ms');
             data_rate_output.String = strcat(num2str(data_rate/1e6,'%10.2e'),' Mbps');
             nadirtext.Visible = 'off';
@@ -563,9 +564,7 @@ function Swath_GUI
        end
 
         
-        % calulates altitude, longitude and latitude of satellite orbit
-       [lat, lon, alt, P,vel] = Sat_orbit( a,e,i,RAAN,v,w,10*num_P,0,dt);
-       alt=alt*Re;
+       
        % calculate longitude, latitude of groundtrack. alt and P not used
        [latg, long] = Sat_orbit( a,e,i,RAAN,v,w,10*num_P,1,dt);
        
@@ -576,6 +575,7 @@ function Swath_GUI
         
        [ ~,~,~,locx] = swath( ...
                 alt(1)/Re,r_actview, latg(1), long(1));
+       
        
         
         % here i set up handles so i can update them in the loop.
@@ -660,6 +660,7 @@ function Swath_GUI
         arc_cross = atand(r_cross/Re);
         
         if val==1
+            % conical scanning
             % finding the starting point of track
             % this is for the zoom map
             first_track = pi/2+track/3;
@@ -729,6 +730,12 @@ function Swath_GUI
                 [~,~,cmin,cmax] = coverage_lineECEF( circle_lat2,circle_lon2,arc_along,A,R);
             end
             
+            
+            %This is an approx way. i'm thinking to make this better, use
+            % scircle, find rows and cols at 4 quartes of the circle of
+            % view?
+            % or convert to xyz, find min and max  of x,y then convert to
+            % rows,cols?
              if abs(cmin-cmax) > 512/2;
                 % if at  edge of image
                 if latg(stop)+r >= 90
@@ -787,7 +794,7 @@ function Swath_GUI
             if val==1
                 
                 
-%                 % conical animation on globe
+                % conical animation on globe
                 [nadcirc_lat,nadcirc_lon] = scircle1(lat(stop),lon(stop),r_nadir);
                 nadcirc_lat = real(nadcirc_lat);
                 nadcirc_lon = real(nadcirc_lon);
@@ -1203,6 +1210,7 @@ end
     earth = referenceEllipsoid('earth','m');
     haxes = axes('Units','Pixels'); 
     axis vis3d
+    
     haxes = axesm ('globe','Grid', 'on','Geoid',earth);
     view(60,60)
     axis(haxes,'off')
@@ -1211,8 +1219,10 @@ end
    
        % create axis 
     hswath = axes('Units','pixels');
+    
     hswath = axesm('ortho','Origin',[0 0],'FLatLimit',[-Inf 0], ...
             'frame','off','grid','off');
+   
     
     box(hswath,'off')
     set(hswath,'color','none');
@@ -1225,7 +1235,8 @@ end
    
    hzoom = axesm('ortho','Origin',[0 0],'FLatLimit',[-Inf 0], ...
             'frame','off','grid','off');
-   view(hzoom,60,40)
+   gcm
+   view(hzoom,60,30)
    zoomgeo = geoshow(A,R);
 %    axis tight
    zoom(hzoom,2)

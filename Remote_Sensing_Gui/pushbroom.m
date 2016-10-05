@@ -1,21 +1,16 @@
-function [ int_time, ground_v,data_rate ] = pushbroom( h,vel,del_x,Nx,Nband,bits)
+function [ int_time, data_rate ] = pushbroom( ground_v,del_x,Nx,Nband,bits)
 % Computes integration time, ground velocity for pushbroom sensors
 
 % INPUTS:
-% h = height or altitude of spacecraft. [m]
-% v = velocity at one point in time [m/s]
+% ground_v = velocity at one point in time [m/s]
 % del_x = pixel size [m]
+% Nx is # crosstrack pixels
+% Nband is number of bands
+% 
 
 % OUTPUTS:
 % int_time = integration time [s]
 % ground_v = ground velocity at one time [m/s]
-
-
-% radius of the earth in [m]
-Re = 6.371e6;
-
-% compute ground velocty
-ground_v = Re * vel / (Re+h);
 
 
 % compute integration time
