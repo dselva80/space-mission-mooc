@@ -622,7 +622,10 @@ if hObject.Value == 1
     v_g_string = strcat(num2str(v_g,'%10.2e'),' m/s');
     set(handles.vg_output,'String',v_g_string);
     
-   
+    % pixel ground size
+    pgs = swath/Nx;
+    
+    set(handles.pixel_g_size_output,'String',pgs);
     
 
      % rotation of earth in deg/sec
@@ -663,11 +666,6 @@ if hObject.Value == 1
     end
     
     r = swathy;
-    
-     % pixel ground size
-    pgs = swathy/Nx;
-    pgs_string = strcat(num2str(pgs,'%10.2e'),' m');
-    set(handles.pixel_g_size_output,'String',pgs_string);
     
     
     % orbit x y z pre calculated
@@ -894,6 +892,7 @@ if hObject.Value == 1
             % change direction of animation
             directi = 180;
             if FOV == IFOV
+                disp('here')
                 swing = 0;
             end
         else
