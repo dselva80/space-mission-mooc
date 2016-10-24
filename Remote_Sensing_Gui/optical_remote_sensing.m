@@ -78,7 +78,7 @@ y_for = -.9*abs(x_for-1)+1;
 plot(leg,x_for,y_for,'--r')
 x_forlabel = .81:.01:1.19;
 y_forlabel = (x_forlabel-1).^2+.8;
-plot(leg,x_forlabel,y_forlabel,'--r')
+plot(leg,x_forlabel,y_forlabel,'r')
 text(leg,.5,.83,'FOR','Color','r','FontSize',13)
 plot(leg,[0 2.5], [.1 .1],'r')
 
