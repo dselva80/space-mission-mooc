@@ -18,6 +18,6 @@ set(gca,'FontSize',18,'FontName','Times')
 
 %annotate
 shim = max(diff(axis))*0.02/3;
-text(0, -shim*5,'O','HorizontalAlignment','left','VerticalAlignment','bottom','FontSize',18,'FontName','Times')
+text(0, -shim,'F','HorizontalAlignment','center','VerticalAlignment','top','FontSize',18,'FontName','Times')
 text(r1v(1)-shim,r1v(2),'$$P_1$$','HorizontalAlignment','right','VerticalAlignment','bottom','FontSize',18,'FontName','Times')
 text(r2v(1)+shim,r2v(2),'$$P_2$$','VerticalAlignment','bottom','FontSize',18,'FontName','Times')
