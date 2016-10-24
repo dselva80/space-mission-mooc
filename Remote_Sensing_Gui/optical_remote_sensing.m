@@ -22,7 +22,7 @@ function varargout = optical_remote_sensing(varargin)
 
 % Edit the above text to modify the response to help optical_remote_sensing
 
-% Last Modified by GUIDE v2.5 19-Sep-2016 13:29:28
+% Last Modified by GUIDE v2.5 23-Oct-2016 13:26:45
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -63,34 +63,67 @@ guidata(hObject, handles);
 
 % legend axis
 leg = handles.legend_axis;
-text(leg,.76,0,'Legend','FontSize',13)
+text(leg,.77,1.1,'Legend','FontSize',13)
 
 hold(leg,'on');
 
 % plot world horizon on legend axis
-x_world = 0:.1:2;
-y_world = -.03*(x_world-1).^2+.2;
+x_world = -1:.1:3;
+y_world = -.03*(x_world-1).^2+.3;
 plot(leg,x_world,y_world,'LineWidth',2)
 
 % plot FOR lines on legend axis
-x_for = .4:.1:1.66;
-y_for = -1.5*abs(x_for-1)+1;
+x_for = 0:.1:2.5;
+y_for = -.9*abs(x_for-1)+1;
 plot(leg,x_for,y_for,'--r')
-x_forlabel = .87:.01:1.13;
+x_forlabel = .81:.01:1.19;
 y_forlabel = (x_forlabel-1).^2+.8;
 plot(leg,x_forlabel,y_forlabel,'r')
-text(leg,.5,.83,'FOV','Color','r','FontSize',13)
-plot(leg,[.4 1.6], [.1 .1],'r')
+text(leg,.5,.83,'FOR','Color','r','FontSize',13)
+plot(leg,[0 2.5], [.1 .1],'r')
 
-% plot FOV lines on legend axis
-x_fov = .85:.01:1.15;
-y_fov = -6*abs(x_fov-1)+1;
-plot(leg,x_fov,y_fov,'k')
-x_fovlabel = .92:.01:1.08;
+% plot IFOV and FOV lines on legend axis
+x_fov = .943:.001:1.057;
+y_fov = -16*abs(x_fov-1)+1;
+plot(leg,x_fov,y_fov,'k');
+x_fovlabel = .97:.01:1.03;
 y_fovlabel = (x_fovlabel-1).^2+.48;
 plot(leg,x_fovlabel,y_fovlabel,'k');
-text(leg,1.18,.48,'IFOV','Color','k','FontSize',13)
-plot(leg,[.8 .9 1.2 1.1 .8],[.05 .15 .15 .05 .05],'k');
+text(leg,1.13,.48,'IFOV','Color','k','FontSize',13)
+x1 = .6;
+twist = .16;
+width =.8;
+y1 = 0.01;
+height = .18;
+x2 = x1+width;
+y2 = y1+height;
+plot(leg,[x1 x1+twist x2 x2-twist x1],[y1 y2 y2 y1 y1],'m');
+
+% plot pixels IFOV
+po =  .07;
+plot(leg,[x1+po x1+twist+.01-po x2-po x2+po-twist-.01 x1+po],[y1+po y2-po y2-po y1+po y1+po],'k');
+pwidth = (width-twist)/5;
+px = [x1+po+pwidth x1+pwidth-po+twist+.01];
+py = [y1+po y2-po];
+plot(leg,px, py,'k')
+px2 = [x1+po+pwidth*2 x1+pwidth*2-po+twist+.01];
+plot(leg,px2, py,'k');
+px3 = [x1+po+pwidth*3 x1+pwidth*3-po+twist+.01];
+plot(leg,px3, py,'k');
+px4 = [x1+po+pwidth*4 x1+pwidth*4-po+twist+.01];
+plot(leg,px4, py,'k');
+
+
+
+%FOV label
+x_fov = .68:.01:1.32;
+y_fov = -2.8*abs(x_fov-1)+1;
+plot(leg,x_fov,y_fov,'m')
+x_forlabel = .79:.01:1.21;
+y_forlabel = .5*(x_forlabel-1).^2+.35;
+plot(leg,x_forlabel,y_forlabel,'m')
+text(leg,.41,.38,'FOV','Color','m','FontSize',13)
+
 
 % last of legend plotting
 axis(leg,[0,2,0,1],'off')
@@ -103,7 +136,6 @@ plot(leg,1,1,'sk','MarkerFaceColor','k','MarkerSize',20)
 nasa = wmsfind('nasa','SearchField','serverurl');
 layer = nasa.refine('bluemarbleng','SearchField','layername','MatchType','exact');
 [A,R] = wmsread(layer);
-
 
 A= (A+30)*1.5;
 A_orig = A;
@@ -229,7 +261,7 @@ end
 
 
 % FOV
-function FOV_edit_Callback(hObject,~, handles) %#ok<DEFNU>
+function FOV_edit_Callback(~,~, ~) %#ok<DEFNU>
 % hObject    handle to FOV_edit (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
@@ -238,11 +270,7 @@ function FOV_edit_Callback(hObject,~, handles) %#ok<DEFNU>
 %        str2double(get(hObject,'String')) returns contents of FOV_edit as a double
 
 % --- Executes during object creation, after setting all properties.
-fov = str2double(get(hObject,'String'));
-ifov = str2double(get(handles.IFOV_edit,'String'));
-if fov < ifov
-        set(handles.IFOV_edit,'String',num2str(fov));
-end
+
 
 
 
@@ -571,10 +599,12 @@ if hObject.Value == 1
     Nx = str2double(Nx);
     Ny = get(handles.Ny_edit,'String');
     Ny = str2double(Ny);
-    FOV = get(handles.FOV_edit,'String');
-    FOV = deg2rad(str2double(FOV));
-    IFOV = get(handles.IFOV_edit,'String');
-    IFOV = deg2rad(str2double(IFOV));
+    FOR = get(handles.FOV_edit,'String');
+    FOR = deg2rad(str2double(FOR));
+    psize = get(handles.p_edit,'String');
+    p = 1e-6*str2double(psize);
+    focal = get(handles.focal_edit,'String');
+    focal = .01*str2double(focal);
 
     a = h + Re;
     
@@ -597,6 +627,7 @@ if hObject.Value == 1
            delete(handles.cone_z);
            delete(handles.diam);
            delete(handles.diamtext);
+           delete(handles.gtrack_z);
            set(handles.hgeo,'CData',handles.A_orig);
            set(handles.swathgeo,'CData',handles.A_orig);
            set(handles.spacecraftgeo,'CData',handles.A_orig);
@@ -613,60 +644,63 @@ if hObject.Value == 1
     [latg, long] = Sat_orbit( a,e,i,RAAN,anom,w,10*num_P,1,dt);
    
     % spatial resolution
-    del_x = spatial_resolution(h,lambda,D);
-    set(handles.del_x_output,'String',strcat(num2str(del_x),' m'));
+    del_xprime = 1.22*h*lambda/D;
+    set(handles.del_xp_output,'String',strcat(num2str(del_xprime),' m'));
     
     % ground velocity
     alt=alt*Re;
     v_g = Re*vel(1) / (Re+alt(1));
-    v_g_string = strcat(num2str(v_g,'%10.2e'),' m/s');
+    v_g_string = strcat(num2str(v_g,'%10.2g'),' m/s');
     set(handles.vg_output,'String',v_g_string);
     
-   
-    
-
-     % rotation of earth in deg/sec
+    % rotation of earth in deg/sec
     w_earth = 360/(24*3600);
 
     % setting up rotation transform
     t1 = hgtransform(handles.globe_axis);
     set(handles.hgeo,'Parent',t1);
     
+    % instantaneous field of view
+    IFOV = p/focal;
+    
+    % ground pizel size
+    g_pixelsize = p*h/focal;
     % integration time and data rate
     push = get(handles.pushbroom_button,'Value');
     if push == 1
         % PUSHBROOM
         % calculate int time, data rate
-        [ int_time, data_rate ] = pushbroom(v_g,del_x,Nx,Nb,bits);
+        int_time = g_pixelsize/v_g;
+        data_rate = (Nb*Nx*bits)/(g_pixelsize/v_g);
         % update int time output
-        int_time = strcat(num2str(int_time,'%10.2e'), ' s');
+        int_time = strcat(num2str(int_time,'%10.2g'), ' s');
         set(handles.int_time_output,'String',int_time);
         % update data rate output
-        data_string = strcat(num2str(data_rate/1e6,'%10.2e'),' Mbps');
+        data_string = strcat(num2str(data_rate/1e6,'%10.2f'),' Mbps');
         set(handles.data_rate_output,'String',data_string);
         % calculate swath area
-        swathy = 2*h*tan(Nx*FOV/2);
-        set(handles.swath_output,'String',strcat(num2str(swathy,'%10.2e'),' m'));
+        swathy = 2*h*tand(Nx*IFOV/2);
+        set(handles.swath_output,'String',strcat(num2str(swathy,'%10.2g'),' m'));
     else
         % WHISKBROOM
         %calculate int time and data rate
-        [ int_time, data_rate ] = whiskbroom( v_g,del_x,Nx,Ny,bits,Nb);
+        int_time = Ny*g_pixelsize/(2*Nx*v_g);
+        data_rate = (Nb*Nx*Ny*bits)/(g_pixelsize/v_g);
         % update int time output
-        int_time = strcat(num2str(int_time,'%10.2e'), ' s');
+        int_time = strcat(num2str(int_time,'%10.2g'), ' s');
         set(handles.int_time_output,'String',int_time);
         % update data rate output
-        data_string = strcat(num2str(data_rate/1e6,'%10.2e'),' Mbps');
+        data_string = strcat(num2str(data_rate/1e6,'%10.2f'),' Mbps');
         set(handles.data_rate_output,'String',data_string);
         % calculate swath area
-        swathy = 2*h*tan(IFOV/2);
-        set(handles.swath_output,'String',strcat(num2str(swathy,'%10.2e'),' m'));
+        swathy = 2*h*tan(FOR/2);
+        set(handles.swath_output,'String',strcat(num2str(swathy,'%10.2g'),' m'));
     end
     
     r = swathy;
     
      % pixel ground size
-    pgs = swathy/Nx;
-    pgs_string = strcat(num2str(pgs,'%10.2e'),' m');
+    pgs_string = strcat(num2str(g_pixelsize,'%10.2g'),' m');
     set(handles.pixel_g_size_output,'String',pgs_string);
     
     
@@ -688,7 +722,9 @@ if hObject.Value == 1
 
 
     % calculates and runs conical swath animation on globe
-    [xECEF, yECEF, zECEF] = conical_animation(IFOV*180/pi,alt(1),latg(1),long(1),lat(1),lon(1));
+    FOV = Nx*IFOV;
+    
+    [xECEF, yECEF, zECEF] = conical_animation(FOV*180/pi/2,alt(1),latg(1),long(1),lat(1),lon(1));
 
     handles.cone_anim = surf(handles.globe_axis,xECEF,yECEF,zECEF,...
         'Facecolor','m','Facealpha',.4,'LineStyle','none','Visible','off');
@@ -746,9 +782,9 @@ if hObject.Value == 1
 
     
     % converting cross and along track angles 
-    cross = FOV*180/pi;
+    cross = FOR*180/pi;
 %     angleperpixel = FOV*180/pi / Nx;
-    along = FOV*180/pi;
+    along = FOR*180/pi;
     %r_along = tand(along)*alt(1);
 %     arc_along = atand(r_along/Re);
     r_cross = tand(cross)*alt(1);
@@ -870,9 +906,9 @@ if hObject.Value == 1
             'Visible','on');
 
         % updating groundtrack on spacecraft axis
-        gx = x5-FOV+.01:.1:x5+FOV+.01;
-        gy = y5-FOV+.01:.1:y5+FOV+.01;
-        gz = zeros(size(gx));
+        %gx = x5-FOV+.01:.1:x5+FOV+.01;
+        gy = y5-FOR+.01-h/1e8:.1:y5+FOR+.01+h/1e8;
+        gz = zeros(size(gy));
         set(handles.gtrack_z,'XData',gz,'YData',gy,'ZData',gz,'Visible','on');
 
 
@@ -893,9 +929,7 @@ if hObject.Value == 1
             % if pushbroom
             % change direction of animation
             directi = 180;
-            if FOV == IFOV
-                swing = 0;
-            end
+            swing = 0;
         else
             % if whiskbroom
             directi = 90;
@@ -904,7 +938,7 @@ if hObject.Value == 1
         [latout,lonout] = reckon(lat(stop),lon(stop),swing,directi);
 
         %without real stuff it spazzes at the poles
-        [xsurf, ysurf, zsurf] = conical_animation(IFOV*180/pi/2,...
+        [xsurf, ysurf, zsurf] = conical_animation(FOV*180/pi,...
             alt(stop),real(latout),real(lonout),...
             real(lat(stop)),real(lon(stop)));
 
@@ -929,8 +963,8 @@ if hObject.Value == 1
             larger_angle = along;
         end
         originz = [round(latg(stop)) round(long(stop)) -heading(stop)];
-        setm(swath_map,'Origin',origin,'FLatLimit',[-Inf IFOV*180/pi/5*3]);
-        setm(spacecraft_map,'Origin',originz,'FLatLimit',[-Inf larger_angle]);
+        setm(swath_map,'Origin',origin,'FLatLimit',[-Inf FOV*180/pi/5*3]);
+        setm(spacecraft_map,'Origin',originz,'FLatLimit',[-Inf larger_angle+h/5e5]);
         axis(handles.spacecraft_axis,'off')
 
         % xyz on orthogonal projection are not the same as on the
@@ -938,11 +972,11 @@ if hObject.Value == 1
         % and it looks roughly correct
         
         if push == 1
-            xcone = IFOV*180/pi/80*cos(ang);
-            ycone = swing/40 + IFOV*180/pi/80*sin(ang);
+            xcone = FOV*180/pi/80*cos(ang);
+            ycone = swing/40 + FOV*180/pi/80*sin(ang);
         else
-            xcone= swing/40 + IFOV/80*180/pi * cos(ang);
-            ycone=  IFOV/80*180/pi * sin(ang);
+            xcone= swing/40 + FOV/80*180/pi * cos(ang);
+            ycone=  FOV/80*180/pi * sin(ang);
         end
         xcirc2 = xcone+x5;
         ycirc2 = ycone+y5;
@@ -978,11 +1012,11 @@ if hObject.Value == 1
         % setting the lat ticks and tick labels for swath
         set(handles.swath_axis,'XTick',[x1 x2 x3],'YTick',[y1 y2 y3]);
         lattext = strcat(num2str(round(latg(stop))),'{\circ}');
-        lat1 = round(latg(stop)-FOV*180/2/pi);
+        lat1 = round(latg(stop)-FOR*180/2/pi);
         if lat1<-90
             lat1 = lat1+180;
         end
-        lat3 = round(latg(stop)+FOV*180/2/pi);
+        lat3 = round(latg(stop)+FOR*180/2/pi);
         if lat3>90
             lat3 =180-lat3;
         end
@@ -991,11 +1025,11 @@ if hObject.Value == 1
 
         % setting the lon ticks and tick labels for swath
         lontext = strcat(num2str(round(long(stop))),'{\circ}');
-        lon1 = round(long(stop)-FOV*180/2/pi);
+        lon1 = round(long(stop)-FOR*180/2/pi);
         if lon1<-180
             lon1 = lon1+360;
         end
-        lon3 = round(long(stop)+FOV*180/2/pi);
+        lon3 = round(long(stop)+FOR*180/2/pi);
         if lon3>180
             lon3 =360-lon3;
         end
@@ -1110,35 +1144,6 @@ function spacecraft_axis_CreateFcn(~, ~, ~) %#ok<DEFNU>
 
 
 
-
-
-function IFOV_edit_Callback(hObject, ~, handles) %#ok<DEFNU>
-% hObject    handle to FOR_edit (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-
-% Hints: get(hObject,'String') returns contents of FOR_edit as text
-%        str2double(get(hObject,'String')) returns contents of FOR_edit as a double
-ifov = str2double(get(hObject,'String'));
-fov = str2double(get(handles.FOV_edit,'String'));
-if fov < ifov
-        set(handles.FOV_edit,'String',num2str(ifov));
-end
-
-
-% --- Executes during object creation, after setting all properties.
-function IFOV_edit_CreateFcn(hObject, ~, ~) %#ok<DEFNU>
-% hObject    handle to FOR_edit (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    empty - handles not created until after all CreateFcns called
-
-% Hint: edit controls usually have a white background on Windows.
-%       See ISPC and COMPUTER.
-if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
-    set(hObject,'BackgroundColor','white');
-end
-
-
 % --- Executes during object creation, after setting all properties.
 function legend_axis_CreateFcn(~, ~, ~) %#ok<DEFNU>
 % hObject    handle to legend_axis (see GCBO)
@@ -1156,3 +1161,49 @@ function inc_text_CreateFcn(~, ~, ~) %#ok<DEFNU>
 % hObject    handle to inc_text (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    empty - handles not created until after all CreateFcns called
+
+
+
+function p_edit_Callback(~, ~, ~) %#ok<DEFNU>
+% hObject    handle to p_edit (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of p_edit as text
+%        str2double(get(hObject,'String')) returns contents of p_edit as a double
+
+
+% --- Executes during object creation, after setting all properties.
+function p_edit_CreateFcn(hObject,~, ~) %#ok<DEFNU>
+% hObject    handle to p_edit (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+
+function focal_edit_Callback(~,~, ~) %#ok<DEFNU>
+% hObject    handle to focal_edit (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of focal_edit as text
+%        str2double(get(hObject,'String')) returns contents of focal_edit as a double
+
+
+% --- Executes during object creation, after setting all properties.
+function focal_edit_CreateFcn(hObject, ~, ~) %#ok<DEFNU>
+% hObject    handle to focal_edit (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
