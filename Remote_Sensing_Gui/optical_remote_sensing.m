@@ -679,7 +679,7 @@ if hObject.Value == 1
         data_string = strcat(num2str(data_rate/1e6,'%10.2f'),' Mbps');
         set(handles.data_rate_output,'String',data_string);
         % calculate swath area
-        swathy = 2*h*tand(Nx*IFOV/2);
+        swathy = 2*h*tan(Nx*IFOV/2);
         set(handles.swath_output,'String',strcat(num2str(swathy,'%10.2g'),' m'));
     else
         % WHISKBROOM
