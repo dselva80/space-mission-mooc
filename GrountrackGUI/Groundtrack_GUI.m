@@ -8,7 +8,7 @@ function Groundtrack_GUI
    figwidth = 800;
    figheight = 650;
    f = figure('Visible','off','Position',[360,500,figwidth,figheight],...
-       'Name','Orbit and Constellation Design','NumberTitle','off',...
+       'Name','Orbit Design','NumberTitle','off',...
        'SizeChangedFcn',@resizeui);
    
    % global variables passed between uicontrols and functions
@@ -353,7 +353,6 @@ function Groundtrack_GUI
 
        % setting up swath
         axes(hswath)
-        axis tight
         ang=0:0.1:2*pi+.1;
         circ_swath = plot(0,0,'m','LineStyle','none','LineWidth',4);
         diam = plot(0,0,'m','LineStyle','none','LineWidth',3);
@@ -432,19 +431,22 @@ function Groundtrack_GUI
             % rotate swath to match heading
             
             origin = [latg(stop) long(stop) -heading(stop)]; 
-            setm(hswath,'Origin',origin,'FLatLimit',[-Inf r])
+            setm(hswath,'Origin',origin,'FLatLimit',[-Inf r]);
             
             
             
             
             % getting the limits of the swath
             xlimits = xlim(hswath);
+            
+            
+            lenf = (xlimits(2)-xlimits(1));
             x1 = xlimits(1);
-            x2 = x1+(xlimits(2)-xlimits(1))/2;
+            x2 = x1+lenf/2;
             x3 = xlimits(2);
             ylimits = ylim(hswath);
             y1 = ylimits(1);
-            y2 = y1+(ylimits(2)-ylimits(1))/2;
+            y2 = y1+lenf/2;
             y3 = ylimits(2);
             
             % setting the lat ticks and tick labels for swath
@@ -681,7 +683,7 @@ end
     box(hswath,'off')
     set(hswath,'color','none');
     axis on
-%     axis tight
+    axis vis3d
     geoshow(topo,topolegend,'DisplayType','texturemap');
     
     
