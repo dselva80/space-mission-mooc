@@ -20,6 +20,9 @@ function varargout = optical_remote_sensing(varargin)
 %
 % See also: GUIDE, GUIDATA, GUIHANDLES
 
+%profile on
+%profiler
+
 % Edit the above text to modify the response to help optical_remote_sensing
 
 % Last Modified by GUIDE v2.5 23-Oct-2016 13:26:45
@@ -170,6 +173,8 @@ axes(handles.swath_axis);
 
 box(handles.swath_axis,'off')
 set(handles.swath_axis,'color','none');
+axis(handles.swath_axis,'on')
+axis(handles.swath_axis,'vis3d')
 axis(handles.swath_axis,'on')
 handles.swathgeo = geoshow(handles.swath_axis,A,R);
 
@@ -763,7 +768,7 @@ if hObject.Value == 1
 
 
    % setting up swath
-    axis(handles.swath_axis,'tight');
+%     axis(handles.swath_axis,'tight');
     ang=0:0.1:2*pi+.1;
     handles.circ_swath = plot(handles.swath_axis,0,0,'m','Visible','off','LineWidth',4);
     handles.diam = plot(handles.swath_axis,0,0,'m','Visible','off','LineWidth',3);
