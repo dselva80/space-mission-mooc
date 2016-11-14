@@ -20,9 +20,12 @@ function varargout = optical_remote_sensing(varargin)
 %
 % See also: GUIDE, GUIDATA, GUIHANDLES
 
+%profile on
+%profiler
+
 % Edit the above text to modify the response to help optical_remote_sensing
 
-% Last Modified by GUIDE v2.5 23-Oct-2016 13:26:45
+% Last Modified by GUIDE v2.5 05-Nov-2016 18:22:27
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -171,6 +174,8 @@ axes(handles.swath_axis);
 box(handles.swath_axis,'off')
 set(handles.swath_axis,'color','none');
 axis(handles.swath_axis,'on')
+axis(handles.swath_axis,'vis3d')
+axis(handles.swath_axis,'on')
 handles.swathgeo = geoshow(handles.swath_axis,A,R);
 
 
@@ -261,13 +266,13 @@ end
 
 
 % FOV
-function FOV_edit_Callback(~,~, ~) %#ok<DEFNU>
-% hObject    handle to FOV_edit (see GCBO)
+function FOR_edit_Callback(~,~, ~) %#ok<DEFNU>
+% hObject    handle to FOR_edit (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
-% Hints: get(hObject,'String') returns contents of FOV_edit as text
-%        str2double(get(hObject,'String')) returns contents of FOV_edit as a double
+% Hints: get(hObject,'String') returns contents of FOR_edit as text
+%        str2double(get(hObject,'String')) returns contents of FOR_edit as a double
 
 % --- Executes during object creation, after setting all properties.
 
@@ -276,8 +281,8 @@ function FOV_edit_Callback(~,~, ~) %#ok<DEFNU>
 
 
 % FOV
-function FOV_edit_CreateFcn(hObject, ~, ~) %#ok<DEFNU>
-% hObject    handle to FOV_edit (see GCBO)
+function FOR_edit_CreateFcn(hObject, ~, ~) %#ok<DEFNU>
+% hObject    handle to FOR_edit (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    empty - handles not created until after all CreateFcns called
 
@@ -370,6 +375,11 @@ function whiskbroom_button_Callback(~, ~, handles) %#ok<DEFNU>
 % Hint: get(hObject,'Value') returns toggle state of whiskbroom_button
 set(handles.broom_panel,'Title','Whiskbroom');
 set(handles.Ny_edit,'String','12');
+set(handles.FOR_text,'Visible','on');
+set(handles.FOR_edit,'Visible','on');
+set(handles.scanrate_edit,'Visible','on');
+set(handles.scan_text,'Visible','on');
+set(handles.scanrate_slider,'Visible','on');
 
 % --- Executes on button press in pushbroom_button.
 function pushbroom_button_Callback(~, ~, handles) %#ok<DEFNU>
@@ -380,7 +390,8 @@ function pushbroom_button_Callback(~, ~, handles) %#ok<DEFNU>
 % Hint: get(hObject,'Value') returns toggle state of pushbroom_button
 set(handles.broom_panel,'Title','Pushbroom');
 set(handles.Ny_edit,'String','6');
-
+set(handles.FOR_text,'Visible','off');
+set(handles.FOR_edit,'Visible','off');
 
 
 
@@ -591,6 +602,9 @@ if hObject.Value == 1
     dt = str2double(dt);
     Nb = get(handles.channel_edit,'String');
     Nb = str2double(Nb);
+    % Because scan rate is in scan/min
+    scanrate = get(handles.scanrate_edit,'String');
+    scan_rate = str2double(scanrate);
     % selva says anamoly doesn't need to be an input for this gui
     anom =0;
     bits = get(handles.bits_edit,'String');
@@ -599,7 +613,7 @@ if hObject.Value == 1
     Nx = str2double(Nx);
     Ny = get(handles.Ny_edit,'String');
     Ny = str2double(Ny);
-    FOR = get(handles.FOV_edit,'String');
+    FOR = get(handles.FOR_edit,'String');
     FOR = deg2rad(str2double(FOR));
     psize = get(handles.p_edit,'String');
     p = 1e-6*str2double(psize);
@@ -653,6 +667,9 @@ if hObject.Value == 1
     v_g_string = strcat(num2str(v_g,'%10.2g'),' m/s');
     set(handles.vg_output,'String',v_g_string);
     
+    
+    
+    
     % rotation of earth in deg/sec
     w_earth = 360/(24*3600);
 
@@ -662,6 +679,10 @@ if hObject.Value == 1
     
     % instantaneous field of view
     IFOV = p/focal;
+    
+    % IFOV output
+    IFOV_string = strcat(num2str(IFOV*1e3,'%10.2g'),' mRad');
+    set(handles.IFOV_output,'String',IFOV_string);
     
     % ground pizel size
     g_pixelsize = p*h/focal;
@@ -679,7 +700,7 @@ if hObject.Value == 1
         data_string = strcat(num2str(data_rate/1e6,'%10.2f'),' Mbps');
         set(handles.data_rate_output,'String',data_string);
         % calculate swath area
-        swathy = 2*h*tand(Nx*IFOV/2);
+        swathy = 2*h*tan(Nx*IFOV/2);
         set(handles.swath_output,'String',strcat(num2str(swathy,'%10.2g'),' m'));
     else
         % WHISKBROOM
@@ -763,7 +784,6 @@ if hObject.Value == 1
 
 
    % setting up swath
-    axis(handles.swath_axis,'tight');
     ang=0:0.1:2*pi+.1;
     handles.circ_swath = plot(handles.swath_axis,0,0,'m','Visible','off','LineWidth',4);
     handles.diam = plot(handles.swath_axis,0,0,'m','Visible','off','LineWidth',3);
@@ -783,10 +803,6 @@ if hObject.Value == 1
     
     % converting cross and along track angles 
     cross = FOR*180/pi;
-%     angleperpixel = FOV*180/pi / Nx;
-    along = FOR*180/pi;
-    %r_along = tand(along)*alt(1);
-%     arc_along = atand(r_along/Re);
     r_cross = tand(cross)*alt(1);
     arc_cross = atand(r_cross/Re);
     
@@ -795,6 +811,19 @@ if hObject.Value == 1
     k=0;
     increasing=1;
     swing=0;
+    
+    %scan rate stuff before loop
+    %convert scan_rate to m/s
+    if scan_rate == 0
+            % not scanning, stationary
+            arc_cross=0;
+            anim_step=1;
+    else
+            anim_step=1/(scan_rate/60*dt);
+    end
+
+   
+        
     % loop of animation
     while k <=length(t) && hObject.Value==1
         k=k+1;
@@ -875,41 +904,14 @@ if hObject.Value == 1
 
 
 
-        %%%%%%%% hzoom axis %%%%%%%%%%%%%
-
-        %%%%% zoom axis
-        %handles.spacecraft_axis.Visible = 'on' ;
-
-        xlimits2 = xlim(handles.spacecraft_axis);
-        x4 = xlimits2(1);
-        x6 = xlimits2(2);
-        x5 = x4+(x6-x4)/2;
-
-        ylimits2 = ylim(handles.spacecraft_axis);
-        y4 = ylimits2(1);
-        y6 = ylimits2(2);
-        y5 = y4+(y6-y4)/2;
-
-
-        %scgeo = get(handles.spacecraft_axis,'UserData');
-        %garray2 = get(handles.spacecraft_axis,'Children');
-        %scgeo = garray2(1,1);
-        %scgeo.CData = hgeo.CData;
+       
 
         % approximate altitude
         zeta = alt(stop)/1e7;
 
         zlim(handles.spacecraft_axis, [0 zeta]);
 
-        % updating sat on spacecraft axis
-        set(handles.sat_z,'XData',x5,'YData',y5,'ZData',zeta,'Marker','s',...
-            'Visible','on');
-
-        % updating groundtrack on spacecraft axis
-        %gx = x5-FOV+.01:.1:x5+FOV+.01;
-        gy = y5-FOR+.01-h/1e8:.1:y5+FOR+.01+h/1e8;
-        gz = zeros(size(gy));
-        set(handles.gtrack_z,'XData',gz,'YData',gy,'ZData',gz,'Visible','on');
+        
 
 
         % animation on globe
@@ -918,11 +920,14 @@ if hObject.Value == 1
         elseif swing <= -arc_cross/2
             increasing=1;
         end
+        
+        
+         
 
         if increasing == 1
-            swing = swing+arc_cross/6;
+            swing = swing+arc_cross/anim_step;
         else
-            swing = swing-arc_cross/6;
+            swing = swing-arc_cross/anim_step;
         end
 
         if push == 1
@@ -957,15 +962,36 @@ if hObject.Value == 1
             'YData',ysurf,'ZData',zsurf);
 
         % plot cone on zoom
-        if cross>along
-            larger_angle = cross;
-        else
-            larger_angle = along;
-        end
         originz = [round(latg(stop)) round(long(stop)) -heading(stop)];
         setm(swath_map,'Origin',origin,'FLatLimit',[-Inf FOV*180/pi/5*3]);
-        setm(spacecraft_map,'Origin',originz,'FLatLimit',[-Inf larger_angle+h/5e5]);
+        setm(spacecraft_map,'Origin',originz,'FLatLimit',[-Inf FOV*180/pi*2]);
+
         axis(handles.spacecraft_axis,'off')
+        
+         %%%%%%%% hzoom axis %%%%%%%%%%%%%
+
+        %%%%% zoom axis
+        %handles.spacecraft_axis.Visible = 'on' ;
+
+        xlimits2 = xlim(handles.spacecraft_axis);
+        x4 = xlimits2(1);
+        x6 = xlimits2(2);
+        sc_axislength = x6-x4;
+        x5 = x4+(sc_axislength)/2;
+
+        ylimits2 = ylim(handles.spacecraft_axis);
+        y4 = ylimits2(1);
+        y6 = ylimits2(2);
+        y5 = y4+(y6-y4)/2;
+        
+        % updating sat on spacecraft axis
+        set(handles.sat_z,'XData',x5,'YData',y5,'ZData',zeta,'Marker','s',...
+            'Visible','on');
+
+        % updating groundtrack on spacecraft axis
+        gy = y5-sc_axislength/3+.01:.1:y5+sc_axislength/3+.005;
+        gz = zeros(size(gy));
+        set(handles.gtrack_z,'XData',gz,'YData',gy,'ZData',gz,'Visible','on');
 
         % xyz on orthogonal projection are not the same as on the
         % globe. Scaled theglobe ECEF xyz down by a factor of 40
@@ -1206,4 +1232,58 @@ function focal_edit_CreateFcn(hObject, ~, ~) %#ok<DEFNU>
 %       See ISPC and COMPUTER.
 if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
+end
+
+
+
+function scanrate_edit_Callback(hObject, ~, handles) %#ok<DEFNU>
+% hObject    handle to scanrate_edit (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of scanrate_edit as text
+%        str2double(get(hObject,'String')) returns contents of scanrate_edit as a double
+scanrate = get(hObject,'String');
+scanrate = str2double(scanrate);
+
+sr_scaled = scanrate*10;
+set(handles.scanrate_edit,'Value',sr_scaled);
+
+
+% --- Executes during object creation, after setting all properties.
+function scanrate_edit_CreateFcn(hObject, ~, ~) %#ok<DEFNU>
+% hObject    handle to scanrate_edit (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+% --- Executes on slider movement.
+function scanrate_slider_Callback(hObject, ~, handles) %#ok<DEFNU>
+% hObject    handle to scanrate_slider (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'Value') returns position of slider
+%        get(hObject,'Min') and get(hObject,'Max') to determine range of slider
+
+
+scanrate = get(hObject,'Value')*6;
+set(handles.scanrate_edit,'String',num2str(scanrate));
+
+
+% --- Executes during object creation, after setting all properties.
+function scanrate_slider_CreateFcn(hObject, ~, ~) %#ok<DEFNU>
+% hObject    handle to scanrate_slider (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: slider controls usually have a light gray background.
+if isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor',[.9 .9 .9]);
 end
