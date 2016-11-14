@@ -602,9 +602,9 @@ if hObject.Value == 1
     dt = str2double(dt);
     Nb = get(handles.channel_edit,'String');
     Nb = str2double(Nb);
-    % Because scan rate is in km/s
+    % Because scan rate is in scan/min
     scanrate = get(handles.scanrate_edit,'String');
-    scan_rate = str2double(scanrate)*1E3;
+    scan_rate = str2double(scanrate);
     % selva says anamoly doesn't need to be an input for this gui
     anom =0;
     bits = get(handles.bits_edit,'String');
@@ -667,6 +667,9 @@ if hObject.Value == 1
     v_g_string = strcat(num2str(v_g,'%10.2g'),' m/s');
     set(handles.vg_output,'String',v_g_string);
     
+    
+    
+    
     % rotation of earth in deg/sec
     w_earth = 360/(24*3600);
 
@@ -676,6 +679,10 @@ if hObject.Value == 1
     
     % instantaneous field of view
     IFOV = p/focal;
+    
+    % IFOV output
+    IFOV_string = strcat(num2str(IFOV*1e3,'%10.2g'),' mRad');
+    set(handles.IFOV_output,'String',IFOV_string);
     
     % ground pizel size
     g_pixelsize = p*h/focal;
@@ -806,11 +813,13 @@ if hObject.Value == 1
     swing=0;
     
     %scan rate stuff before loop
+    %convert scan_rate to m/s
     if scan_rate == 0
+            % not scanning, stationary
             arc_cross=0;
             anim_step=1;
     else
-            anim_step=swathy/(dt*scan_rate);
+            anim_step=1/(scan_rate/60*dt);
     end
 
    
@@ -1264,7 +1273,7 @@ function scanrate_slider_Callback(hObject, ~, handles) %#ok<DEFNU>
 %        get(hObject,'Min') and get(hObject,'Max') to determine range of slider
 
 
-scanrate = get(hObject,'Value')*15;
+scanrate = get(hObject,'Value')*6;
 set(handles.scanrate_edit,'String',num2str(scanrate));
 
 
