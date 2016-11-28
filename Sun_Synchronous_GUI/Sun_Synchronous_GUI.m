@@ -64,9 +64,11 @@ guidata(hObject, handles);
 % uiwait(handles.figure1);
 
 %setting up map info for Earth
-nasa = wmsfind('nasa','SearchField','serverurl');
-layer = nasa.refine('bluemarbleng','SearchField','layername','MatchType','exact');
-[A,R] = wmsread(layer);
+% nasa = wmsfind('nasa','SearchField','serverurl');
+% layer = nasa.refine('bluemarbleng','SearchField','layername','MatchType','exact');
+% [A,R] = wmsread(layer);
+
+load topo;
 
 earth = referenceEllipsoid('earth','m');
 
@@ -80,28 +82,31 @@ axis(handles.earth_axes,'vis3d');
 view(handles.earth_axes,90,27);
 axis(handles.earth_axes,'off');
 % showing earths surface w/ map
-handles.hgeo = geoshow(handles.earth_axes,A,R);
+%handles.hgeo = geoshow(handles.earth_axes,A,R);
+earth_surf = meshm(topo, topolegend, size(topo));
+demcmap(topo);
+
+% setting up rotation transform
+t1 = hgtransform(handles.earth_axes);
+set(earth_surf,'Parent',t1);
+
 plot3(7e6,7e6,7e6,'MarkerSize',8,'MarkerFaceColor','y')
-handles.light = surf(handles.earth_axes,x_sphere*200+8e6,y_sphere*020+8e6,z_sphere*200);
-% lighting on earth
-% lighting none
-light('Position',[-1 -1 0])
-rotate3d on;
-%lighting gouraud
-%material(0.6*[ 1 1 1])
-material ([1, 1, 0.7]);
+%lighting the earth
+lightm(0,-90,24933,'color','white','style','infinite');
+earth_surf.AmbientStrength = 0.25;
+earth_surf.SpecularStrength = .2;
+earth_surf.DiffuseStrength = 1;
 
 % rotation of earth in deg/sec
 w_earth = 360/(24*3600);
     
-% setting up rotation transform
-t1 = hgtransform(handles.earth_axes);
-set(handles.hgeo,'Parent',t1);
+
 
 % Setting up Sun/Earth axis
 axes(handles.solar_axes)
 axis(handles.solar_axes,'vis3d')
 rotate3d on;
+axis equal
 
 
 
@@ -123,7 +128,9 @@ y_e = y_sphere+r_earth;
 z_e = z_sphere;
 hold on;
 handles.earth = surf(handles.solar_axes,x_e,y_e,z_e);
-set(handles.earth,'FaceColor','g','EdgeColor','none');
+set(handles.earth,'FaceColor','b','EdgeColor','none');
+
+
 
 set(handles.solar_axes,'XLim', [-r_earth*1.5 r_earth*1.5],...
     'YLim', [-r_earth*1.5 r_earth*1.5], 'ZLim',[-r_earth*1.5 r_earth*1.5])
@@ -132,19 +139,17 @@ set(handles.solar_axes,'XLim', [-r_earth*1.5 r_earth*1.5],...
 t2 = hgtransform(handles.solar_axes);
 set(handles.earth,'Parent',t2);
 
+%noon vectors
+earth_quiv = quiver(handles.earth_axes,0,0,0,-1e7);
 
+solar_quiv = quiver(handles.solar_axes,r_earth,r_earth,-5,-5);
+solar_quiv.Color = [0.8500 0.3250 0.0980];
+set(solar_quiv,'Parent',t2);
+solar_quiv.MaxHeadSize = 1;
 
 % time
 dt=20;
 t=0:dt:100000;
-
-% get rotation matrix of Earth
-% [ rotation_matrix] = Earth_Sun_Orbit( 1e2 )
-% first = rotation_matrix(1,:);
-% second = rotation_matrix(2,:);
-% third = rotation_matrix(3,:);
-
-% rotate
 
 % k indexes time
 k=0;
@@ -159,12 +164,6 @@ while k <=length(t)-1
     set(t2,'Matrix',Txy2);
     axis(handles.solar_axes,'off')
 
-%     x_earth = handles.earth.XData;
-%     y_earth = handles.earth.YData;
-%     z_earth = handles.earth.ZData;
-%     handles.earth.XData = x_earth*first(k);
-%     handles.earth.YData = y_earth*second(k);
-%     handles.earth.ZData = z_earth*third(k);
     
     drawnow
 end
