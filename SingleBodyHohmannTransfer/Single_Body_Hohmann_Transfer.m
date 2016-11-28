@@ -35,7 +35,7 @@ H.parameters = uicontrol('Style','text','Position',...
     [700 50 200 200],'String','',ops{1},'no',...
     ops{2},'w',ops{3},'Bold',ops{4},10);
 H.speed = uicontrol('Style','slider','Position',...
-    [625 350 100 25],'Min',.02,'Max',.5,'Value',.1,...
+    [625 350 100 25],'Min',1,'Max',10,'Value',7,...
     ops{1},'no',ops{2},'w',ops{3},'Bold',ops{4},10);
 H.animate = uicontrol('Style','togglebutton','Position',...
     [625 310 100 25],'Value',0,'String','Play',...
@@ -145,7 +145,7 @@ H.text_burn2 = uicontrol('Style','text','Position',...
     [1180 575 150 20],'String','-- Second Burn --',...
     ops{1},'no',ops{2},'w',ops{3},'Bold',ops{4},10); 
 H.text_nu2 = uicontrol('Style','text','Position',...
-    [1190 530 130 40],'String','true anomaly in orbit = [0,360]',...
+    [1180 530 150 40],'String','true anomaly in orbit = [0,360]',...
     ops{1},'no',ops{2},'w',ops{3},'Bold',ops{4},10);
 H.text_dv2 = uicontrol('Style','text','Position',...
     [1180 485 150 20],'String','delta v (km/s)',...
@@ -181,31 +181,31 @@ H.ax = axes('Units','Pixels','Position',[-50 0 700 700],...
 H.ax.View = [-100,20];
 
 % set callback functions
-set(H.planets,'Callback',{@CB,H})
-set(H.animPref,'Callback',{@CB,H})
-set(H.speed,'Callback',{@CB,H})
-set(H.animate,'Callback',{@CB,H})
-set(H.altp1,'Callback',{@CB,H})
-set(H.alta1,'Callback',{@CB,H})
-set(H.i1,'Callback',{@CB,H})
-set(H.R1,'Callback',{@CB,H})
-set(H.w1,'Callback',{@CB,H})
-set(H.nu1,'Callback',{@CB,H})
-set(H.altp2,'Callback',{@CB,H})
-set(H.alta2,'Callback',{@CB,H})
-set(H.i2,'Callback',{@CB,H})
-set(H.R2,'Callback',{@CB,H})
-set(H.w2,'Callback',{@CB,H})
-set(H.nu2,'Callback',{@CB,H})
-set(H.dv1,'Callback',{@CB,H})
-set(H.th1,'Callback',{@CB,H})
-set(H.imp1,'Callback',{@CB,H})
-set(H.dv2,'Callback',{@CB,H})
-set(H.th2,'Callback',{@CB,H})
-set(H.imp2,'Callback',{@CB,H})
+set(H.planets,'Callback',{@MainCallBack,H})
+set(H.animPref,'Callback',{@MainCallBack,H})
+set(H.speed,'Callback',{@MainCallBack,H})
+set(H.animate,'Callback',{@MainCallBack,H})
+set(H.altp1,'Callback',{@MainCallBack,H})
+set(H.alta1,'Callback',{@MainCallBack,H})
+set(H.i1,'Callback',{@MainCallBack,H})
+set(H.R1,'Callback',{@MainCallBack,H})
+set(H.w1,'Callback',{@MainCallBack,H})
+set(H.nu1,'Callback',{@MainCallBack,H})
+set(H.altp2,'Callback',{@MainCallBack,H})
+set(H.alta2,'Callback',{@MainCallBack,H})
+set(H.i2,'Callback',{@MainCallBack,H})
+set(H.R2,'Callback',{@MainCallBack,H})
+set(H.w2,'Callback',{@MainCallBack,H})
+set(H.nu2,'Callback',{@MainCallBack,H})
+set(H.dv1,'Callback',{@MainCallBack,H})
+set(H.th1,'Callback',{@MainCallBack,H})
+set(H.imp1,'Callback',{@MainCallBack,H})
+set(H.dv2,'Callback',{@MainCallBack,H})
+set(H.th2,'Callback',{@MainCallBack,H})
+set(H.imp2,'Callback',{@MainCallBack,H})
 end
 
-function CB(~,~,H)
+function MainCallBack(~,~,H)
 % set the correct styles depending on the selected animation style
 if get(H.animPref,'Value') == 1
     style1 = 'edit';
@@ -226,6 +226,7 @@ set(H.dv2,'Style',style2)
 set(H.th2,'Style',style2)
 set(H.imp2,'Style',style2)
 
+% if altitude at periapse is higher than that at apoapse then switch
 if str2double(get(H.altp1,'String')) > str2double(get(H.alta1,'String')) 
     tmp = get(H.altp1,'String');
     set(H.altp1,'String',get(H.alta1,'String'))
@@ -237,10 +238,10 @@ if str2double(get(H.altp2,'String')) > abs(str2double(get(H.alta2,'String')))
     set(H.alta2,'String',tmp)
 end
 
-% update the thrust angle display
+% update the thrust/angle display
 display(H)
 
-% continue to animation/calculation
+% continue animation/calculation
 if get(H.animPref,'Value') == 1
     calculate_Automatic(H)
 elseif get(H.animPref,'Value') == 2
@@ -254,18 +255,20 @@ end
 function calculate_Manual(H)
 % read in all data
 [ai,ei,Ii,Ri,wi,nu1,~,~,~,~,~,nu2,sp,dv1,dv2,...
-    imp1,imp2,th1,th2,mu,Radius,col] = params(H);
+    imp1,imp2,th1,th2,mu,PR,col] = params(H);
 
 % define the eccentricity as vector for initial orbit 
 ei = [ei; 0; 0];
 ei = DCM323(ei,Ii,Ri,wi);
 
-% guard against imaginary numbers (discontinuity at nu = pi)
-if nu1 > pi*(1-.0090/pi) && nu1 < pi*(1+.0090*pi)
-    nu1 = pi*179.5/180;
+% guard against imaginary numbers (discontinuity at nu ~ pi)
+if (nu1 > pi*(1-.0090/pi) && nu1 < pi*(1+.0090/pi)) ||...
+        (nu1 > -.0090/pi && nu1 < .0090/pi)
+    nu1 = nu1+pi*.5/180;
 end
-if nu2 > pi*(1-.0090/pi) && nu2 < pi*(1+.0090*pi)
-    nu2 = pi*179.5/180;
+if (nu2 > pi*(1-.0090/pi) && nu2 < pi*(1+.0090/pi)) ||...
+        (nu2 > -.0090/pi && nu2 < .0090/pi)
+    nu2 = nu2+pi*.5/180;
 end
 
 % calculate all the orbital elements
@@ -279,8 +282,8 @@ s = [sprintf('a1 = %2.0f km  e1 = %2.4f  \n',ai,ei),...
 set(H.parameters,'String',s);
 
 % reset text values for user display
-altp2 = af*(1-ef)-Radius;
-alta2 = af*(1+ef)-Radius;
+altp2 = af*(1-ef)-PR;
+alta2 = af*(1+ef)-PR;
 if altp2 < 160
     warning('altitude extremely low or negative')
 end
@@ -302,12 +305,15 @@ P1 = 2*pi*sqrt((ai^3)/mu);
 [RA,~,nuA] = orbit(ai,ei,Ii,Ri,wi,h1,mu,max(ai,at),P1);
 [RB,~,nuB] = orbit(at,et,It,Rt,wt,ht,mu,max(ai,at),P1);
 [RC,~,nuC] = orbit(af,ef,If,Rf,wf,h2,mu,max(ai,at),P1);
-if dv1 == 0
-    RB = RA;
+
+% set limits on the second burn location if the transfer orbit is open
+if et < 1
+    TAL = sprintf('true anomaly in orbit = [0,360]');
+else
+    TAL = sprintf('true anomaly in orbit = [%2.4f,%2.4f]',...
+        nuB(1)*180/pi,nuB(end)*180/pi);
 end
-if dv2 == 0
-    RC = RB;
-end
+set(H.text_nu2,'String',TAL);
 
 % create axes and axis limits
 axlim = 1.1*max(max(sqrt(RA(1,:).^2+RA(2,:).^2+RA(3,:).^2)),...
@@ -315,25 +321,17 @@ axlim = 1.1*max(max(sqrt(RA(1,:).^2+RA(2,:).^2+RA(3,:).^2)),...
     max(sqrt(RC(1,:).^2+RC(2,:).^2+RC(3,:).^2))));
 ax = linspace(-axlim,axlim,10);
 
-% create value to correctly animate resonance and correct the time
-% if ai > af
-%     n = [1,(ai/at)^3,(ai/af)^3].*(axlim/ai)^3;
-% else 
-%     n = [(af/ai)^3,(af/at)^3,1].*(axlim/af)^3;
-% end
-n = [1,1,1];
-
 % save previous view
 prevView = H.ax.View;
 
 % plot orbits
-plot3(H.ax,RC(1,:),RC(2,:),RC(3,:),'w',...
-    RB(1,:),RB(2,:),RB(3,:),'y',...
-    RA(1,:),RA(2,:),RA(3,:),'m');
+p3 = plot3(H.ax,RC(1,:),RC(2,:),RC(3,:),'--w');
+hold(H.ax,'on')
+p2 = plot3(H.ax,RB(1,:),RB(2,:),RB(3,:),'--m');
+p1 = plot3(H.ax,RA(1,:),RA(2,:),RA(3,:),'y');
 legend({'final orbit','intermediate orbit','initial orbit'},...
     'Location','South','TextColor','w','color','k')
 %plot3(H.ax,path(1,:),path(2,:),path(3,:),'w');
-hold(H.ax,'on')
 plot3(H.ax,ax,zeros(size(ax)),zeros(size(ax)),'r',...
     zeros(size(ax)),ax,zeros(size(ax)),'g',...
     zeros(size(ax)),zeros(size(ax)),ax,'b','LineWidth',2);
@@ -356,7 +354,7 @@ if nut >= pi
 else
     ind2 = calcIndex(nuB,nut);
 end
-if nu2 >= pi %&& nu2 ~= 0
+if nu2 >= pi 
     [~,i] = min(nuB);
     nuB = [nuB(i:end),nuB(1:i-1)];
     ind3 = calcIndex(nuB,nu2);
@@ -375,21 +373,24 @@ elseif nu3 >= pi
 else
     ind4 = calcIndex(nuC,nu3);
 end
-ind1 = ckAngle(ind1,1,length(nuA));
-ind2 = ckAngle(ind2,1,length(nuB));
-if (nu2 == 0 && nu1 >= pi) 
-    ind3 = ckAngle(ind3-length(nuB)/2,1,length(nuB));
+
+% round and check index of inds to protect against error/warning messages
+ind1 = round(ckAngle(ind1,1,length(nuA)));
+ind2 = round(ckAngle(ind2,1,length(nuB)));
+if (nu2 <= pi && nu1 >= pi) 
+    ind3 = round(ckAngle(ind3-length(nuB)/2,1,length(nuB)));
 else
-    ind3 = ckAngle(ind3,1,length(nuB));
+    ind3 = round(ckAngle(ind3,1,length(nuB)));
 end
-if nu1 >= pi
-    ind3 = ind3 + length(nuB)/2;
-end
-ind4 = ckAngle(ind4,1,length(nuC));
+ind4 = round(ckAngle(ind4,1,length(nuC)));
 
 % calculate path
-RA = RA(:,1:ind1);
-if ind3 > ind2
+if ind1 > length(RA)/30
+    RA = RA(:,1:ind1);
+else
+    RA = [RA,RA(:,1:ind1)];
+end
+if ind3 > ind2+length(RB)/20
     RB = RB(:,ind2:ind3);
 else
     RB = [RB(:,ind2:end),RB(:,1:ind3)];
@@ -403,11 +404,9 @@ end
 % create the objects for the surfaces
 ind = 1;
 [x,y,z] = sphere;
-radii = min(abs(ai),min(abs(at),abs(af)));
-surf(H.ax,radii*x/4,radii*y/4,radii*z/4,...
-'EdgeColor','none','FaceColor',col);
-sat = surf(H.ax,radii*x/10+path(1,ind),radii*y/10+path(2,ind),...
-    radii*z/10+path(3,ind),'EdgeColor','none','FaceColor','c');
+surf(H.ax,PR*x/2,PR*y/2,PR*z/2,'EdgeColor','none','FaceColor',col);
+sat = surf(H.ax,PR*x/8+path(1,ind),PR*y/8+path(2,ind),...
+    PR*z/8+path(3,ind),'EdgeColor','none','FaceColor','c');
 hold(H.ax,'off');
 
 % apply previous view
@@ -420,41 +419,39 @@ else
     set(H.animate,'String','Play');
 end
 
-% add extra speed for closed orbits
-if et >= 1 || ef >= 1
-    sp = 20*sp;
-elseif et < 1 && ef < 1
-    sp = 20*sp;
-end
-
-% initialize variable to count for pausing at each burn
+% initialize variable to count for burns
 count = 0;
 
 % animate if selected 
 while get(H.animate,'Value') == 1 && ceil(ind) < length(path)
-    if ind > length(RA)+length(RB)
-        ind = ind + .5*sp*n(3);
-        if count == 1
-            count = 2;
-            pause(1);
-        end
-    elseif ind > length(RA) && ind < length(RA)+length(RB)
-        ind = ind + .5*sp*n(2);
-        if count == 0
-            count = 1;
-            pause(1);
-        end
-    elseif ind < length(RA)
-        ind = ind + .5*sp*n(1);
+    % increase the index for animate update
+    ind = ind + sp;
+    
+    % check for the location of each burn to pause animation
+    if ind > length(RA) && count == 0
+        count = 1;
+        pause(.7)
+        set(p1,'LineStyle','--')
+        set(p2,'LineStyle','-')
+    elseif ind > length(RA)+length(RB) && count == 1
+        count = 2;
+        pause(.7)
+        set(p2,'LineStyle','--')
+        set(p3,'LineStyle','-')
     end
+    
+    % check if index is out of bounds and final orbit is closed, then loop,
+    % else set index to last value and end animation
     if ceil(ind) >= length(path)-1 && ef < 1
         ind = ind - length(RC);
-    elseif ceil(ind) > length(path)
+    elseif ceil(ind) >= length(path)
         ind = length(path);
     end
-    set(sat,'XData',radii*x/10+path(1,ceil(ind)),...
-        'YData',radii*y/10+path(2,ceil(ind)),...
-        'ZData',radii*z/10+path(3,ceil(ind)));
+    
+    % update data and draw
+    set(sat,'XData',PR*x/10+path(1,ceil(ind)),...
+        'YData',PR*y/10+path(2,ceil(ind)),...
+        'ZData',PR*z/10+path(3,ceil(ind)));
     drawnow;
     pause(eps);
 end
@@ -690,7 +687,7 @@ elseif get(H.planets,'Value') == 5
     col = [1 .5 .3];
     R = 71492;
 elseif get(H.planets,'Value') == 6
-    mu = 3.79311*10^7; 
+    mu = 3.79311*10^7;
     col = [1 .8 0];
     R = 60268;
 elseif get(H.planets,'Value') == 7
