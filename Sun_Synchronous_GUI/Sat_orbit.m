@@ -1,4 +1,4 @@
-function [ lat,lon,z, P,vel ] = Sat_orbit( a,e,i,Omega,v,w,num_P,gtrack,dt )
+function [ lat,lon,z, P,vel ] = Sat_orbit( a,e,i,Omega,v,w,num_P,gtrack,dt,planet )
 % Allegra Moran 6/17/16
 %   Groundtrack takes in orbital parameters and returns two corresponding
 %   vectors, latitude and longitude. Plot on a map to represent
@@ -16,6 +16,16 @@ function [ lat,lon,z, P,vel ] = Sat_orbit( a,e,i,Omega,v,w,num_P,gtrack,dt )
 % gtrack is a 0 or 1. if 1, we take into account the rotation of the earth
 %  (for the case of computing lat and long for a groundtrack). 
 % dt is time step in seconds- controls velocity of the plot
+% planet represents position to sun
+% 1 - Mercury
+% 2 - Venus
+% 3 - Earth
+% 4 - Mars
+% 5 - Jupiter
+% 6 - Saturn
+% 7 - Uranus
+% 8 - Neptune
+% 9 - Pluto
 
 % OUTPUTS 
 
@@ -34,16 +44,63 @@ v = deg2rad(v);
 % CONSTANTS
 
 % Earth grav constant [m^3/s^2]
-mu = 3.986E14;
 
-% rotation of the Earth [rad/s]
-rotE = 7.2921158553e-5;
-
-% radius of the Earth [m]
-Re = 6.378E6; 
-
-%oblateness of the Earth
-J2 = 0.00108263;
+if planet == 3
+    %earth
+    mu = 3.986E14;
+    J2 = 0.00108263;
+    R = 6.371E6;
+    % rotation of the Earth [rad/s]
+    rot = 7.2921e-5;
+elseif planet == 1
+    % Mercury
+    mu = 2.2032e13;
+    J2 = 0.00006;
+    R = 2.439E6;
+    rot = 1.24e-06;
+elseif planet == 2
+    % Venus
+    mu = 3.24859E14;
+    J2 = 0.000027;
+    R = 6.051E6;
+    rot = 2.99E-7;
+elseif planet == 4
+    % Mars
+    mu = 4.282837e13;
+    J2 = 0.001964;
+    R = 3.396E6;
+    rot = 7.088e-05;
+elseif planet == 5
+    % Jupiter
+    mu = 1.26686534E17;
+    J2 = 0.01475;
+    R = 71.492E6;
+    rot = 1.77E-4;
+elseif planet == 6
+    % Saturn
+    mu = 3.7931187E16;
+    J2 = 0.01645;
+    R = 60.268E6;
+    rot =1.63E-4;
+elseif planet == 7
+    % Uranus
+    mu = 5.794e15;
+    J2 = 0.012;
+    R = 25.559E6;
+    rot = -1.04E-4;
+elseif planet ==8
+    % Neptune
+    mu = 6.809e15;
+    J2 = 0.0004;
+    R = 24.764E6;
+    rot = 1.08E-4;
+else
+    %Pluto
+    mu = 8.71E11;
+    J2 = 0;
+    R = 1.195E6;
+    rot = -1.29E-5;
+end
 
 
 % ORBITAL VARIABLES CALCULATIONS
@@ -65,7 +122,7 @@ tf = round(P*num_P);
 t = 0:dt:tf ;
 
 % RAAN
-dot_omega = 3/2*(1-e^2)^2*n*J2*(Re/a)^2*cos(i);
+dot_omega = 3/2*(1-e^2)^2*n*J2*(R/a)^2*cos(i);
 
 % initialize time dependent vectors before theyre assigned in loop
 M_t = zeros(size(t));
@@ -85,7 +142,7 @@ for j=1:length(t)
    
    % time dependent RAAN
     if gtrack == 1
-        Omega_t(j) = Omega+(dot_omega-rotE)*t(j);
+        Omega_t(j) = Omega+(dot_omega-rot)*t(j);
     else
         Omega_t(j) = Omega+(dot_omega*t(j));
     end
@@ -111,7 +168,7 @@ lon = longi .* sign(second);
 % returns 0 altitude for groundtrack. returns altidude in earth radii for an
 % orbit
 if gtrack ==0
-    z=(r-Re)./Re;
+    z=(r-R)./R;
 else
     z = zeros(size(lat));
 end

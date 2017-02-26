@@ -652,10 +652,10 @@ if hObject.Value == 1
     % could be changed later
     num_P = 1;
     % calculates lat and lon of 10 orbital periods
-    [lat, lon, alt, P,vel] = Sat_orbit( a,e,i,RAAN,anom,w,10*num_P,0,dt);
+    [lat, lon, alt, P,vel] = Sat_orbit( a,e,i,RAAN,anom,w,10*num_P,0,dt,3);
     
     % calculate longitude, latitude of groundtrack. alt, P, v not used
-    [latg, long] = Sat_orbit( a,e,i,RAAN,anom,w,10*num_P,1,dt);
+    [latg, long] = Sat_orbit( a,e,i,RAAN,anom,w,10*num_P,1,dt,3);
    
     % spatial resolution
     del_xprime = 1.22*h*lambda/D;
