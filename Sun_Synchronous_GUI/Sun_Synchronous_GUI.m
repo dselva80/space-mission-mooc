@@ -150,12 +150,11 @@ t2 = hgtransform(handles.solar_axes);
 set(handles.earth,'Parent',t2);
 
 %noon vectors
-x_light = handles.light_pos(1);
-y_light = handles.light_pos(2);
-z_light = handles.light_pos(3);
-earth_quiv = quiver3(handles.earth_axes,0,0,0,x_light*1e7,y_light*1e7,...
-    z_light*1E7); % for right axis
-earth_quiv.Color = [0.8500 0.3250 0.0980];
+x_light = handles.light_pos(1)*handles.R*2;
+y_light = handles.light_pos(2)*handles.R*2;
+z_light = handles.light_pos(3)*handles.R*2;
+handles.earth_quiv = quiver3(handles.earth_axes,0,0,0,x_light,y_light,...
+    z_light,'Color',[0.8500 0.3250 0.0980]); % for right axis
 
 
 handles.solar_quiv = quiver(handles.solar_axes,r_earth,r_earth,-5,-5,...
@@ -335,6 +334,7 @@ set(handles.earth,'XData',xs+r_p,'YData',ys+r_p)
 % set(handles.solar_quiv,'XData',r_p,'YData',r_p,'UData',-r_p*.2,'VData',-r_p*.2)
 set(handles.solar_quiv,'XData',r_p,'YData',r_p)
 
+get_MLTAN(hObject,handles);
 
 % limits get wonky
 szfctr = 1.5;
@@ -358,6 +358,7 @@ if planet == 3
     handles.mu = 3.986E14;
     handles.J2 = 0.00108263;
     handles.R = 6.371E6;
+    handles.name = 'earth';
     % rotation of the Earth [rad/s]
     handles.rot = 7.2921e-5;
     handles.colorz = [0 0 160/255];
@@ -368,6 +369,7 @@ elseif planet == 1
     handles.R = 2.439E6;
     handles.rot = 1.24e-06;
     handles.colorz = [.6 .6 .6];
+    handles.name = 'mercury';
 elseif planet == 2
     % Venus
     handles.mu = 3.24859E14;
@@ -375,6 +377,7 @@ elseif planet == 2
     handles.R = 6.051E6;
     handles.rot = 2.99E-7;
     handles.colorz = [250/255, 220/255, 121/255];
+    handles.name = 'venus';
 elseif planet == 4
     % Mars
     handles.mu = 4.282837e13;
@@ -382,6 +385,7 @@ elseif planet == 4
     handles.R = 3.396E6;
     handles.rot = 7.088e-05;
     handles.colorz = [.9 .3 0];
+    handles.name = 'mars';
 elseif planet == 5
     % Jupiter
     handles.mu = 1.26686534E17;
@@ -389,6 +393,7 @@ elseif planet == 5
     handles.R = 71.492E6;
     handles.rot = 1.77E-4;
     handles.colorz = [210/255, 200/255, 150/255];
+    handles.name = 'jupiter';
 elseif planet == 6
     % Saturn
     handles.mu = 3.7931187E16;
@@ -396,6 +401,7 @@ elseif planet == 6
     handles.R = 60.268E6;
     handles.rot =1.63E-4;
     handles.map = [210/255, 200/255, 150/255];
+    handles.name = 'saturn';
 elseif planet == 7
     % Uranus
     handles.mu = 5.794e15;
@@ -403,6 +409,7 @@ elseif planet == 7
     handles.R = 25.559E6;
     handles.rot = -1.04E-4;
     handles.colorz = [209/255 231/255 231/255];
+    handles.name = 'uranus';
 elseif planet ==8
     % Neptune
     handles.mu = 6.809e15;
@@ -410,6 +417,7 @@ elseif planet ==8
     handles.R = 24.764E6;
     handles.rot = 1.08E-4;
     handles.colorz = [63/255 84/255 186/255];
+    handles.name = 'neptune';
 else
     %Pluto
     handles.mu = 8.71E11;
@@ -417,6 +425,7 @@ else
     handles.R = 1.195E6;
     handles.rot = -1.29E-5;
     handles.colorz = [.8 .7 .5];
+    handles.name = 'pluto';
 end
 updated_handles=handles;
 guidata(hObject,handles)
@@ -649,9 +658,11 @@ lat = rad2deg(asin(third));
 longi = rad2deg( acos(first./cos(deg2rad(lat))) );
 lon = longi .* sign(second);
 
-alt = r;
-earth = referenceEllipsoid('earth','m');
-[ox,oy,oz] = geodetic2ecef(earth,lat,lon,alt);
+alt = r-handles.R;
+planet = referenceEllipsoid(handles.name,'m');
+[ox,oy,oz] = geodetic2ecef(planet,lat,lon,alt);
+
+% we don't care about imaginary part
 
 handles.ox = real(ox);
 handles.oy = real(oy);
@@ -678,13 +689,48 @@ guidata(hObject,handles)
 
 
 function handles = calculate_t(hObject,handles)
-% time
+%time has to be recalculated for each planet selection
 
+% time 
 handles.t = 0:handles.dt:round(20*handles.num_P*handles.P);
 
+% tail_length is one orbit length of indeces 
 handles.tail_length = round(handles.P/handles.dt);
 
-
+% updates handles
 guidata(hObject,handles)
+
+
+function handles = get_MLTAN(hObject,handles)
+%given an orbit, figures out the local mean solar time of the ascending node
+%(which is the crossing time of the equatorial plane)
+
+% noon vector components
+u = get(handles.earth_quiv,'UData');
+v = get(handles.earth_quiv,'VData');
+n = [u v 0];
+
+% ascending node components assuming sat starts at AN
+x = handles.ox(1);
+y = handles.oy(1);
+an = [x y 0];
+
+
+angle = atan2(norm(cross(an,n)),dot(an,n))*180/pi;
+
+% convert that angle to time
+% 6 hours corresponds to 90 degrees i think
+first_hr = num2str(round(angle*6/90));
+
+disp(strcat( first_hr,'AM-',first_hr,'PM'))
+
+
+
+% updates handles
+guidata(hObject,handles)
+
+
+
+
 
 
