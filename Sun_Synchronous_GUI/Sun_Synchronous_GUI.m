@@ -69,6 +69,8 @@ set(gcf,'Name','Sun Synchronous Orbit Design');
 
 % Input from Button
 handles.planet = get(handles.planet_selection,'Value');
+handles.step = 200;
+handles.earthdays=0;
 handles = Update_Planet_Constants(hObject,handles);
 % Draw Planet on Right Axis
 
@@ -109,11 +111,6 @@ handles.RAAN = str2double(get(handles.RAAN_edit,'String')); % kept as degrees
 t1 = hgtransform(handles.earth_axes);
 set(handles.planet_surf,'Parent',t1);
 
-%plot3(7e6,7e6,7e6,'MarkerSize',8,'MarkerFaceColor','y')
-
-% rotation of earth around sun in deg/sec
-w_earth = 360/(24*3600);
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%  Sun and Earth Axis %%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % Setting up Sun/Earth axis
@@ -126,7 +123,7 @@ axis equal
 [x_sphere,y_sphere,z_sphere] = sphere();
 
 % the sun
-sun_factor = handles.R/1E6;
+sun_factor = 10;
 x_sun = x_sphere*sun_factor;
 y_sun = y_sphere*sun_factor;
 z_sun = z_sphere*sun_factor;
@@ -135,7 +132,7 @@ handles.sun = surf(handles.solar_axes,x_sun,y_sun,z_sun);
 set(handles.sun,'FaceColor','y','EdgeColor','none');
 
 % the earth
-r_earth = 30;
+r_earth = 20;
 x_e = x_sphere+r_earth;
 y_e = y_sphere+r_earth;
 z_e = z_sphere;
@@ -143,8 +140,9 @@ hold on;
 handles.earth = surf(handles.solar_axes,x_e,y_e,z_e);
 set(handles.earth,'FaceColor',handles.colorz,'EdgeColor','none');
 
-set(handles.solar_axes,'XLim', [-r_earth*1.5 r_earth*1.5],...
-    'YLim', [-r_earth*1.5 r_earth*1.5], 'ZLim',[-r_earth*1.5 r_earth*1.5])
+q = 1.8;
+set(handles.solar_axes,'XLim', [-r_earth*q r_earth*q],...
+    'YLim', [-r_earth*q r_earth*q], 'ZLim',[-r_earth*q r_earth*q])
 
 % setting up rotation transform for earth around sun
 t2 = hgtransform(handles.solar_axes);
@@ -155,9 +153,9 @@ handles = draw_noon_vectors(hObject,handles,1);
 
 % noon vector left axis
 handles.solar_quiv = quiver(handles.solar_axes,r_earth,r_earth,-5,-5,...
-    'Color',[0.8500 0.3250 0.0980],'MaxHeadSize',1); 
+    'Color',[0.8500 0.3250 0.0980],'MaxHeadSize',.8); 
 
-handles.solar_orb = quiver(handles.solar_axes,r_earth,r_earth,-5,-5,...
+handles.solar_orb = quiver(handles.solar_axes,r_earth,r_earth,-30,-30,...
     'Color',[0 0 0],'MaxHeadSize',1); 
 
 handles = yearly_sat_orbit(hObject,handles);
@@ -171,8 +169,7 @@ set(handles.solar_orb,'Parent',t2);
 handles.num_P=1;
 handles.dt=20;
 
-updated_handles2 = Sat_orbit(hObject, handles);
-handles=updated_handles2;
+handles = Sat_orbit(hObject, handles);
 
   
 % time
@@ -191,14 +188,21 @@ plot3(handles.earth_axes,handles.ox(1:endy),handles.oy(1:endy),...
        
 axis(handles.earth_axes,'tight');
 
-
-
 %set up orbital plane
 handles = draw_orbital_plane(hObject,handles,1);
 
-% year time in rad, index of yr = day
-handles.yr = 0:2*pi/365:2*pi*20;
-    
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%  Graph  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+  
+% index_max = floor(handles.P/handles.dt);
+% y1 = handles.lat(1:index_max);
+% x1 = handles.t(1:index_max);
+
+%handles.linegraph = plot(handles.graph,x1,y1);
+
+set(get(handles.graph, 'xlabel'),'String','Local Time at Crossing [hr]');
+set(get(handles.graph, 'ylabel'),'String','Lattitude [deg]');
+
 % k indexes time
 handles.k=0;
 % save handles
@@ -210,7 +214,7 @@ while handles.k <=length(handles.t)
     
     %%%%%% Earth (Right) Axis %%%%
     % make earth rotate
-    n = w_earth/180*pi*handles.t(handles.k);
+    n = handles.rot*(handles.t(handles.k));
     Txy = makehgtform('zrotate',n);
     set(t1,'Matrix',Txy);
     
@@ -229,6 +233,7 @@ while handles.k <=length(handles.t)
     set(handles.hsat,'XData',handles.ox(stop),'YData',handles.oy(stop),...
         'ZData',handles.oz(stop));
     handles = draw_orbital_plane(hObject,handles,0);
+   
     
     %%%%%% Sun/ Earth (Left) Axis %%%%%
     n2 = handles.yr(handles.k);
@@ -236,12 +241,19 @@ while handles.k <=length(handles.t)
     set(t2,'Matrix',Txy2);
     axis(handles.solar_axes,'off')
     
-    h=7;
+    h=10;
     newu = -h*sin(handles.Omega_t(handles.k));
     newv = -h*cos(handles.Omega_t(handles.k));
     set(handles.solar_orb,'UData',newu,'VData',newv);
     
+    handles.earthdays = handles.earthdays+handles.P_year/handles.step;
     
+    if handles.earthdays <= 365
+        str = ['Earth Days Passed ',num2str(floor(handles.earthdays))];
+    else
+        str = ['Earth Years Passed ',num2str(round(handles.earthdays/365,1))];
+    end
+    set(handles.left_day,'String',str)
     
     
     
@@ -340,6 +352,7 @@ function Planet_Selection_Callback(hObject, eventdata, handles)
 %items = get(hObject,'String');
 index_selected = get(hObject,'Value');
 handles.planet = index_selected;
+handles.earthdays = 0;
 handles = Update_Planet_Constants(hObject,handles);
 handles = Draw_Planet(hObject,handles);
 
@@ -351,28 +364,31 @@ set(handles.earth,'FaceColor',handles.colorz);
 %update time
 handles = calculate_t(hObject,handles);
 
+% I was scaling the axis on the left with respect to planet selection, but
+% it got confusing
+
 % update solar (left) axis
-[xs,ys] = sphere();
-r_p = 10*handles.planet;
-if r_p>40
-    xs=xs*3;
-    ys=ys*3;
-    set(handles.earth,'FaceColor',[.2 .2 .2]);
-end
-set(handles.earth,'XData',xs+r_p,'YData',ys+r_p)
+%[xs,ys] = sphere();
+%r_p = 10*handles.planet;
+%if r_p>40
+    %xs=xs*3;
+    %ys=ys*3;
+    %set(handles.earth,'FaceColor',[.2 .2 .2]);
+%end
+%set(handles.earth,'XData',xs+r_p,'YData',ys+r_p)
 % set(handles.solar_quiv,'XData',r_p,'YData',r_p,'UData',-r_p*.2,'VData',-r_p*.2)
-set(handles.solar_quiv,'XData',r_p,'YData',r_p)
+%set(handles.solar_quiv,'XData',r_p,'YData',r_p)
 handles = draw_noon_vectors(hObject,handles,0);
 
 get_MLTAN(hObject,handles);
 
 % limits get wonky
-szfctr = 1.5;
-low = -r_p*szfctr;
-hi = r_p*szfctr;
-xlim(handles.solar_axes,[low hi]);
-ylim(handles.solar_axes,[low hi]);
-zlim(handles.solar_axes,[low hi]);
+% szfctr = 1.5;
+% low = -r_p*szfctr;
+% hi = r_p*szfctr;
+% xlim(handles.solar_axes,[low hi]);
+% ylim(handles.solar_axes,[low hi]);
+% zlim(handles.solar_axes,[low hi]);
 
 %restart loop
 %handles.k=0;
@@ -392,6 +408,8 @@ if planet == 3
     % rotation of the Earth [rad/s]
     handles.rot = 7.2921e-5;
     handles.colorz = [0 0 160/255];
+    handles.yr = 0:2*pi/handles.step:2*pi*20;
+    handles.P_year = 365;
 elseif planet == 1
     % Mercury
     handles.mu = 2.2032e13;
@@ -400,6 +418,8 @@ elseif planet == 1
     handles.rot = 1.24e-06;
     handles.colorz = [.6 .6 .6];
     handles.name = 'mercury';
+    handles.yr = 0:2*pi/handles.step:2*pi*20;
+    handles.P_year = 88;
 elseif planet == 2
     % Venus
     handles.mu = 3.24859E14;
@@ -408,6 +428,8 @@ elseif planet == 2
     handles.rot = 2.99E-7;
     handles.colorz = [250/255, 220/255, 121/255];
     handles.name = 'venus';
+    handles.yr = 0:-2*pi/handles.step:-2*pi*20;
+    handles.P_year = 224.7;
 elseif planet == 4
     % Mars
     handles.mu = 4.282837e13;
@@ -416,6 +438,8 @@ elseif planet == 4
     handles.rot = 7.088e-05;
     handles.colorz = [.9 .3 0];
     handles.name = 'mars';
+    handles.yr = 0:2*pi/handles.step:2*pi*20;
+    handles.P_year = 686.93;
 elseif planet == 5
     % Jupiter
     handles.mu = 1.26686534E17;
@@ -424,6 +448,8 @@ elseif planet == 5
     handles.rot = 1.77E-4;
     handles.colorz = [210/255, 200/255, 150/255];
     handles.name = 'jupiter';
+    handles.yr = 0:2*pi/handles.step:2*pi*20;
+    handles.P_year = 11.86*365;
 elseif planet == 6
     % Saturn
     handles.mu = 3.7931187E16;
@@ -432,6 +458,8 @@ elseif planet == 6
     handles.rot =1.63E-4;
     handles.map = [210/255, 200/255, 150/255];
     handles.name = 'saturn';
+    handles.yr = 0:2*pi/handles.step:2*pi*20;
+    handles.P_year = 10755;
 elseif planet == 7
     % Uranus
     handles.mu = 5.794e15;
@@ -440,6 +468,8 @@ elseif planet == 7
     handles.rot = -1.04E-4;
     handles.colorz = [209/255 231/255 231/255];
     handles.name = 'uranus';
+    handles.yr = 0:2*pi/handles.step:2*pi*20;
+    handles.P_year = 84*365;
 elseif planet ==8
     % Neptune
     handles.mu = 6.809e15;
@@ -448,6 +478,8 @@ elseif planet ==8
     handles.rot = 1.08E-4;
     handles.colorz = [63/255 84/255 186/255];
     handles.name = 'neptune';
+    handles.yr = 0:2*pi/handles.step:2*pi*20;
+    handles.P_year = 164*365;
 else
     %Pluto
     handles.mu = 8.71E11;
@@ -456,6 +488,8 @@ else
     handles.rot = -1.29E-5;
     handles.colorz = [.8 .7 .5];
     handles.name = 'pluto';
+    handles.yr = 0:2*pi/handles.step:2*pi*20;
+    handles.P_year = 248*365;
 end
 updated_handles=handles;
 guidata(hObject,handles)
@@ -696,6 +730,8 @@ alt = r-handles.R;
 planet = referenceEllipsoid(handles.name,'m');
 [ox,oy,oz] = geodetic2ecef(planet,lat,lon,alt);
 
+% update handles w/ latitude so that it can be graphed in outputs
+handles.lat = lat;
 % we don't care about imaginary part
 
 handles.ox = real(ox);
@@ -704,9 +740,26 @@ handles.oz = real(oz);
 
 
 % update mltan output
-handles = get_MLTAN(hObject,handles);
-strn = strcat( handles.eqtime,'AM-',handles.eqtime,'PM');
-set(handles.eqtime_output,'String',strn)
+% handles = get_MLTAN(hObject,handles);
+% strn = strcat( handles.eqtime,'AM-',handles.eqtime,'PM');
+% set(handles.eqtime_output,'String',strn)
+
+% get 100 data points
+sizevar = 1000;
+lonies = zeros(sizevar);
+latties = zeros(sizevar);
+count=0;
+for i=1:length(lonies)
+    if lon(i) < .1
+        count=count+1;
+        handles = get_MLTAN(hObject,handles,i);
+        lonies(count)=handles.eqtime;
+        latties(count) = lat(i);
+    end
+end
+plot(handles.graph,lonies,latties,'*')
+
+
 
 
 guidata(hObject,handles)
@@ -771,7 +824,7 @@ handles.tail_length = round(handles.P/handles.dt);
 % updates handles
 guidata(hObject,handles)
 
-function handles = get_MLTAN(hObject,handles)
+function handles = get_MLTAN(hObject,handles,index)
 %given an orbit, figures out the local mean solar time of the ascending node
 %(which is the crossing time of the equatorial plane)
 
@@ -781,8 +834,8 @@ v = get(handles.earth_quiv,'VData');
 n = [u v 0];
 
 % ascending node components assuming sat starts at AN
-x = handles.ox(1);
-y = handles.oy(1);
+x = handles.ox(index);
+y = handles.oy(index);
 an = [x y 0];
 
 
@@ -790,7 +843,7 @@ angle = atan2(norm(cross(an,n)),dot(an,n))*180/pi;
 
 % convert that angle to time
 % 6 hours corresponds to 90 degrees i think
-first_hr = num2str(round(angle*6/90));
+first_hr = angle*6/90;
 
 handles.eqtime = first_hr;
 
@@ -812,6 +865,8 @@ if first ==1
 else
     set(handles.earth_quiv,'UData',x_light,'VData',y_light','WData',z_light)
 end
+
+guidata(hObject,handles)
 
 
 
