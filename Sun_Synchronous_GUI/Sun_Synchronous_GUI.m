@@ -115,10 +115,11 @@ set(handles.planet_surf,'Parent',t1);
 
 % Setting up Sun/Earth axis
 axes(handles.solar_axes)
-% whitebg([0 0 0])
-axis(handles.solar_axes,'vis3d')
+axis(handles.solar_axes,'vis3d','off')
+
 rotate3d on;
 axis equal
+
 
 [x_sphere,y_sphere,z_sphere] = sphere();
 
@@ -149,11 +150,11 @@ t2 = hgtransform(handles.solar_axes);
 set(handles.earth,'Parent',t2);
 
 % noon vector on right axis
-handles = draw_noon_vectors(hObject,handles,1);
+handles = draw_noon_vectorR(hObject,handles,1);
 
 % noon vector left axis
 handles.solar_quiv = quiver(handles.solar_axes,r_earth,r_earth,-5,-5,...
-    'Color',[0.8500 0.3250 0.0980],'MaxHeadSize',.8); 
+    'Color',[0.8500 0.330 0.10],'MaxHeadSize',.8); 
 
 handles.solar_orb = quiver(handles.solar_axes,r_earth,r_earth,-30,-30,...
     'Color',[0 0 0],'MaxHeadSize',1); 
@@ -191,17 +192,32 @@ axis(handles.earth_axes,'tight');
 %set up orbital plane
 handles = draw_orbital_plane(hObject,handles,1);
 
+% draw equator on planet
+handles = plot_equator(hObject,handles,1);
+
+
+
+% view top down left axis
+view(handles.solar_axes,2)
+
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%  Graph  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   
-% index_max = floor(handles.P/handles.dt);
-% y1 = handles.lat(1:index_max);
-% x1 = handles.t(1:index_max);
 
-%handles.linegraph = plot(handles.graph,x1,y1);
+handles = plot_lat_MLTAN(hObject,handles,1);
 
-set(get(handles.graph, 'xlabel'),'String','Local Time at Crossing [hr]');
+% x y labels
+set(get(handles.graph, 'xlabel'),'String','Mean Local Time [hr]');
 set(get(handles.graph, 'ylabel'),'String','Lattitude [deg]');
+% x y limits hard set
+xlim(handles.graph,[0 24]);
+ylim(handles.graph,[-90 90]);
+% x y ticks
+xticks(handles.graph,[0 2 4 6 8 10 12 14 16 18 20 22 24])
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Animation Loop  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % k indexes time
 handles.k=0;
@@ -232,6 +248,9 @@ while handles.k <=length(handles.t)
     % plot satellite
     set(handles.hsat,'XData',handles.ox(stop),'YData',handles.oy(stop),...
         'ZData',handles.oz(stop));
+    
+    % only do this once every orbit
+    
     handles = draw_orbital_plane(hObject,handles,0);
    
     
@@ -241,9 +260,19 @@ while handles.k <=length(handles.t)
     set(t2,'Matrix',Txy2);
     axis(handles.solar_axes,'off')
     
-    h=10;
-    newu = -h*sin(handles.Omega_t(handles.k));
-    newv = -h*cos(handles.Omega_t(handles.k));
+    arrowsize=10;
+    % the pi/4 offset is because the noon vector does not line up with the
+    % axis. noon vector is [-5 -5]
+%     angle = (-handles.Omega_t(handles.k)+pi/4)*180/pi;
+    newu1 = -arrowsize*sin(-handles.Omega_t(handles.k)+pi/4);
+    newv1 = -arrowsize*cos(-handles.Omega_t(handles.k)+pi/4);
+    
+    sun_angle = 23.5/180*pi;
+    rotm = [cos(sun_angle) 0 sin(sun_angle); 0 1 0; -sin(sun_angle) 0 cos(sun_angle)];
+    answer = rotm*[newu1;newv1;0];
+    newu = answer(1);
+    newv = answer(2);
+    
     set(handles.solar_orb,'UData',newu,'VData',newv);
     
     handles.earthdays = handles.earthdays+handles.P_year/handles.step;
@@ -255,7 +284,14 @@ while handles.k <=length(handles.t)
     end
     set(handles.left_day,'String',str)
     
+    %output
     
+    % if crossing equator, update MLTAN
+    if handles.oz(stop) < 1E5 && handles.oz(stop) > -1E5
+        eqtime = round(get_MLT(hObject,handles,stop));
+        str = strcat( num2str(eqtime), '[hr]');
+        set(handles.eqtime_output,'String',str)
+    end
     
     % save handles
     guidata(hObject,handles)
@@ -285,8 +321,7 @@ function i_edit_Callback(hObject, ~, handles) %#ok<DEFNU>
 %        str2double(get(hObject,'String')) returns contents of scanrate_edit as a double
 i = str2double(get(hObject,'String'));
 handles.i = i;
-handles = Sat_orbit(hObject,handles);
-handles.k=0; %restart loop
+handles = something_changed(hObject,handles);
 guidata(hObject,handles)
 
 function a_edit_Callback(hObject, ~, handles) %#ok<DEFNU>
@@ -298,9 +333,7 @@ function a_edit_Callback(hObject, ~, handles) %#ok<DEFNU>
 %        str2double(get(hObject,'String')) returns contents of scanrate_edit as a double
 a = str2double(get(hObject,'String'));
 handles.a = a*1E3+handles.R;
-handles = Sat_orbit(hObject,handles);
-handles = calculate_t(hObject,handles);
-handles.k=1; %restart loop
+handles = something_changed(hObject,handles);
 guidata(hObject,handles)
 
 function e_edit_Callback(hObject, ~, handles) %#ok<DEFNU>
@@ -312,8 +345,7 @@ function e_edit_Callback(hObject, ~, handles) %#ok<DEFNU>
 %        str2double(get(hObject,'String')) returns contents of scanrate_edit as a double
 e = str2double(get(hObject,'String'));
 handles.e = e;
-handles = Sat_orbit(hObject,handles);
-handles.k=0; %restart loop
+handles = something_changed(hObject,handles);
 guidata(hObject,handles)
 
 function w_edit_Callback(hObject, ~, handles) %#ok<DEFNU>
@@ -325,8 +357,7 @@ function w_edit_Callback(hObject, ~, handles) %#ok<DEFNU>
 %        str2double(get(hObject,'String')) returns contents of scanrate_edit as a double
 w = str2double(get(hObject,'String'));
 handles.w = w;
-handles = Sat_orbit(hObject,handles);
-handles.k=0; %restart loop
+handles = something_changed(hObject,handles);
 guidata(hObject,handles)
 
 function RAAN_edit_Callback(hObject, ~, handles) %#ok<DEFNU>
@@ -338,8 +369,7 @@ function RAAN_edit_Callback(hObject, ~, handles) %#ok<DEFNU>
 %        str2double(get(hObject,'String')) returns contents of scanrate_edit as a double
 RAAN = str2double(get(hObject,'String'));
 handles.RAAN = RAAN;
-handles = Sat_orbit(hObject,handles);
-handles.k=0; %restart loop
+handles = something_changed(hObject,handles);
 guidata(hObject,handles)
 
 function Planet_Selection_Callback(hObject, eventdata, handles)
@@ -358,41 +388,18 @@ handles = Draw_Planet(hObject,handles);
 
 % update orbit of satellite to account for change in radius of planet
 handles.a = str2double(get(handles.a_edit,'String'))*1000+handles.R;
-handles = Sat_orbit(hObject,handles);
+% updates sat orbit, lat/mltan graph...
+handles = something_changed(hObject,handles);
+% set face color left axis
 set(handles.earth,'FaceColor',handles.colorz);
-
-%update time
+% update time
 handles = calculate_t(hObject,handles);
+% noon vector
+handles = draw_noon_vectorR(hObject,handles,0);
+% draw equator on planet
+handles = plot_equator(hObject,handles,0);
 
-% I was scaling the axis on the left with respect to planet selection, but
-% it got confusing
-
-% update solar (left) axis
-%[xs,ys] = sphere();
-%r_p = 10*handles.planet;
-%if r_p>40
-    %xs=xs*3;
-    %ys=ys*3;
-    %set(handles.earth,'FaceColor',[.2 .2 .2]);
-%end
-%set(handles.earth,'XData',xs+r_p,'YData',ys+r_p)
-% set(handles.solar_quiv,'XData',r_p,'YData',r_p,'UData',-r_p*.2,'VData',-r_p*.2)
-%set(handles.solar_quiv,'XData',r_p,'YData',r_p)
-handles = draw_noon_vectors(hObject,handles,0);
-
-get_MLTAN(hObject,handles);
-
-% limits get wonky
-% szfctr = 1.5;
-% low = -r_p*szfctr;
-% hi = r_p*szfctr;
-% xlim(handles.solar_axes,[low hi]);
-% ylim(handles.solar_axes,[low hi]);
-% zlim(handles.solar_axes,[low hi]);
-
-%restart loop
-%handles.k=0;
-
+% updates handles
 guidata(hObject,handles)
 
 %this function changes the radius and rotation values held in handles to
@@ -410,6 +417,7 @@ if planet == 3
     handles.colorz = [0 0 160/255];
     handles.yr = 0:2*pi/handles.step:2*pi*20;
     handles.P_year = 365;
+    handles.tilt = 23.5/180*pi;
 elseif planet == 1
     % Mercury
     handles.mu = 2.2032e13;
@@ -642,9 +650,9 @@ z = z*handles.R;
 set(handles.planet_surf,'XData',x,'YData',y,'ZData',z,'CData',map);
 
 
-
-handles.light_pos = [-1 .3 .26]; % tilt of the earth normalized
+handles.light_pos = [-1 0 tan(handles.tilt)]; % tilt of the earth normalized
 % maybe change later for planets
+
 
 updated_handles=handles;
 guidata(hObject,handles)
@@ -726,39 +734,18 @@ lat = rad2deg(asin(third));
 longi = rad2deg( acos(first./cos(deg2rad(lat))) );
 lon = longi .* sign(second);
 
-alt = r-handles.R;
-planet = referenceEllipsoid(handles.name,'m');
-[ox,oy,oz] = geodetic2ecef(planet,lat,lon,alt);
+handles.ox = r.*first;
+handles.oy = r.*second;
+handles.oz = r.*third;
 
-% update handles w/ latitude so that it can be graphed in outputs
+% hopefully imaginary numbers aren't a problem^
+
+
+disp('update sat orbit')
+
+% update handles w/ lat lon so that it can be graphed in outputs
 handles.lat = lat;
-% we don't care about imaginary part
-
-handles.ox = real(ox);
-handles.oy = real(oy);
-handles.oz = real(oz);
-
-
-% update mltan output
-% handles = get_MLTAN(hObject,handles);
-% strn = strcat( handles.eqtime,'AM-',handles.eqtime,'PM');
-% set(handles.eqtime_output,'String',strn)
-
-% get 100 data points
-sizevar = 1000;
-lonies = zeros(sizevar);
-latties = zeros(sizevar);
-count=0;
-for i=1:length(lonies)
-    if lon(i) < .1
-        count=count+1;
-        handles = get_MLTAN(hObject,handles,i);
-        lonies(count)=handles.eqtime;
-        latties(count) = lat(i);
-    end
-end
-plot(handles.graph,lonies,latties,'*')
-
+handles.lon = lon;
 
 
 
@@ -782,6 +769,12 @@ n = sqrt(mu/a^3);
 % RAAN
 dot_omega = 3/2*(1-e^2)^2*n*J2*(R/a)^2*cos(i);
 
+% earth's rotation rad/s
+% need to change by planet
+dot_omega_earth = 2*pi/(handles.P_year*24*3600);
+
+
+
 % initialize time dependent vectors before theyre assigned in loop
 handles.Omega_t = zeros(size(year_t));
 
@@ -789,13 +782,16 @@ handles.Omega_t = zeros(size(year_t));
 
 for j=1:length(year_t)
    % time dependent RAAN
-   handles.Omega_t(j) = Omega+(dot_omega*year_t(j));
+   handles.Omega_t(j) = Omega+(dot_omega*year_t(j))+dot_omega_earth*year_t(j);
    
 end
+
+
+
 guidata(hObject,handles)
 
 function handles = draw_orbital_plane(hObject,handles,first)
-
+% on right axis
 xfill = handles.ox(1:handles.tail_length);
 yfill = handles.oy(1:handles.tail_length);
 zfill = handles.oz(1:handles.tail_length);
@@ -824,9 +820,10 @@ handles.tail_length = round(handles.P/handles.dt);
 % updates handles
 guidata(hObject,handles)
 
-function handles = get_MLTAN(hObject,handles,index)
-%given an orbit, figures out the local mean solar time of the ascending node
-%(which is the crossing time of the equatorial plane)
+function eqtime = get_MLT(hObject,handles,index)
+% given an orbit, figures out the local mean solar time of the ascending node
+% (which is the crossing time of the equatorial plane)
+% im not using handles anywhere
 
 % noon vector components
 u = get(handles.earth_quiv,'UData');
@@ -839,37 +836,118 @@ y = handles.oy(index);
 an = [x y 0];
 
 
-angle = atan2(norm(cross(an,n)),dot(an,n))*180/pi;
+angle = atan2(norm(cross(an,n)),dot(an,n)) *180/pi;
 
 % convert that angle to time
 % 6 hours corresponds to 90 degrees i think
 first_hr = angle*6/90;
 
-handles.eqtime = first_hr;
+if y<handles.light_pos(2)*handles.R*1.5
+   first_hr = 24-first_hr;
+end
 
-%disp(strcat( first_hr,'AM-',first_hr,'PM'))
+
+eqtime = first_hr;
 
 
-
-% updates handles
-guidata(hObject,handles)
-
-function handles = draw_noon_vectors(hObject, handles,first)
-
+function handles = draw_noon_vectorR(hObject, handles,first)
+% draws noon vector on right axis
 x_light = handles.light_pos(1)*handles.R*1.5;
 y_light = handles.light_pos(2)*handles.R*1.5;
 z_light = handles.light_pos(3)*handles.R*1.5;
 if first ==1
     handles.earth_quiv = quiver3(handles.earth_axes,0,0,0,x_light,y_light,...
-        z_light,'Color',[0.8500 0.3250 0.0980]); % for right axis
+        z_light,'Color',[0.8500 0.330 0.10]); % for right axis
 else
     set(handles.earth_quiv,'UData',x_light,'VData',y_light','WData',z_light)
 end
 
 guidata(hObject,handles)
 
+function handles = plot_equator(hObject,handles,first)
+% plots equator on right axis
+long = -180:10:180;
+lat = zeros(size(long));
+alt = zeros(size(long));
+
+planet = referenceEllipsoid(handles.name,'m');
+[x,y,z] = geodetic2ecef(planet,lat,long,alt);
+
+hold on
+
+if first ==1
+    handles.equator = plot3(handles.earth_axes,x,y,z,'--','Color','m');
+else
+    set(handles.equator,'XData',x,'ydata',y,'zdata',z)
+end
 
 
 
+guidata(hObject,handles)
+
+function handles = plot_lat_MLTAN(hObject,handles,first)
+% plots or updates the plot of lat/lon crossing time graph
+
+num_pts_per_P = round(handles.P/handles.dt);
+sizevar = num_pts_per_P;
+% pre allocate
+cross_time = zeros(sizevar);
+latties = zeros(sizevar);
+count=0;
+step=5;
+% grab every 5 latitude and longitudes 
+for i=1:step:sizevar
+%     if handles.lat(i) < .1
+        count=count+1;
+        eqtime = get_MLT(hObject,handles,i);
+        cross_time(count)= eqtime;
+        latties(count) = handles.lat(i);
+%     end
+end
+indeces = cross_time~=0;
+cross_time = cross_time(indeces);
+latties = latties(indeces);
+
+if first==1
+    handles.linegraph = plot(handles.graph,cross_time,latties,'*');
+    
+else
+    
+    set(handles.linegraph,'XData',cross_time,'YData',latties);
+end
+disp('updated lat time graph')
+
+
+
+guidata(hObject,handles)
+
+function handles = something_changed(hObject,handles)
+% this function is called when something has changed
+
+handles = Sat_orbit(hObject,handles);
+
+handles = plot_lat_MLTAN(hObject,handles,0);
+
+handles = calculate_t(hObject,handles);
+
+handles = yearly_sat_orbit(hObject,handles);
+
+handles.earthdays =0;
+
+handles.k=0; %restart loop
+
+guidata(hObject,handles)
+
+function handles = auto_callback(hObject, ~, handles)
+
+handles.mode = 1;
+
+guidata(hObject,handles)
+
+function handles = manual_callback(hObject, ~, handles)
+
+handles.mode = 0;
+
+guidata(hObject,handles)
 
 

@@ -92,3 +92,9 @@ ENV/
 *.m~
 
 .DS_store
+
+Sun_Synchronous_GUI/earthymap.png
+
+Sun_Synchronous_GUI/extra.m
+
+*.png
