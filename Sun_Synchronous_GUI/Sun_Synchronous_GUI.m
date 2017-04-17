@@ -141,6 +141,11 @@ hold on;
 handles.earth = surf(handles.solar_axes,x_e,y_e,z_e);
 set(handles.earth,'FaceColor',handles.colorz,'EdgeColor','none');
 
+% earth's orbit
+theta = 0:pi/20:2*pi;
+r_o = r_earth+sun_factor-1.5;
+plot(handles.solar_axes,r_o*cos(theta),r_o*sin(theta),'--')
+
 q = 1.8;
 set(handles.solar_axes,'XLim', [-r_earth*q r_earth*q],...
     'YLim', [-r_earth*q r_earth*q], 'ZLim',[-r_earth*q r_earth*q])
@@ -195,10 +200,13 @@ handles = draw_orbital_plane(hObject,handles,1);
 % draw equator on planet
 handles = plot_equator(hObject,handles,1);
 
-
-
 % view top down left axis
 view(handles.solar_axes,2)
+
+%set default mode
+handles.mode=0;
+%j2 output
+set(handles.J2readout,'String',strcat('Using J2 = ',num2str(handles.J2)));
 
 
 
@@ -289,7 +297,12 @@ while handles.k <=length(handles.t)
     % if crossing equator, update MLTAN
     if handles.oz(stop) < 1E5 && handles.oz(stop) > -1E5
         eqtime = round(get_MLT(hObject,handles,stop));
-        str = strcat( num2str(eqtime), '[hr]');
+        if eqtime <=12
+            secondhr = eqtime+12;
+        else
+            secondhr = eqtime-12;
+        end
+        str = strcat( num2str(eqtime),'-',num2str(secondhr), '[hr]');
         set(handles.eqtime_output,'String',str)
     end
     
@@ -320,8 +333,38 @@ function i_edit_Callback(hObject, ~, handles) %#ok<DEFNU>
 % Hints: get(hObject,'String') returns contents of scanrate_edit as text
 %        str2double(get(hObject,'String')) returns contents of scanrate_edit as a double
 i = str2double(get(hObject,'String'));
-handles.i = i;
-handles = something_changed(hObject,handles);
+
+% if auto mode
+if handles.mode==1
+    % if change inclination in auto mode, change a
+    %e = handles.e;
+    i = deg2rad(i);
+    J2 = handles.J2;
+    R = handles.R;
+    mu = handles.mu;
+    dot_omega_planet = 2*pi/(handles.P_year*24*3600);
+    
+    % from SME SMAD equation for nodal precessoin
+    a = (-3/2*sqrt(mu)*J2*R^2*cos(i)/dot_omega_planet)^(2/7);
+    alt = (a-handles.R)/1000;
+    
+    % if alt doesn't work
+    if alt<0
+        % throw error message
+        set(handles.errormsg,'String','Inclination not possible')
+    % if alt works
+    else
+        handles.a=a;
+        handles.i=i;
+        set(handles.a_edit,'String',alt);
+        handles = something_changed(hObject,handles);
+    end
+else
+    handles.i=i;
+    
+end
+
+
 guidata(hObject,handles)
 
 function a_edit_Callback(hObject, ~, handles) %#ok<DEFNU>
@@ -331,8 +374,37 @@ function a_edit_Callback(hObject, ~, handles) %#ok<DEFNU>
 
 % Hints: get(hObject,'String') returns contents of scanrate_edit as text
 %        str2double(get(hObject,'String')) returns contents of scanrate_edit as a double
-a = str2double(get(hObject,'String'));
-handles.a = a*1E3+handles.R;
+alty = str2double(get(hObject,'String'));
+a = alty*1E3+handles.R;
+
+% if auto mode
+if handles.mode==1
+    % if change alt in auto mode, change i
+    %e = handles.e;
+    J2 = handles.J2;
+    R = handles.R;
+    mu = handles.mu;
+    dot_omega_planet = 2*pi/(handles.P_year*24*3600);
+    
+    expression = dot_omega_planet/(-3/2*sqrt(mu/a^3)*J2*(R/a)^2);
+    radi = acos(expression);
+    i = rad2deg(radi);
+    
+    alt = (a-handles.R)/1000;
+    if alt<0
+        set(handles.errormsg,'String','Altitude not possible')
+    else
+        handles.a=a;
+        handles.i=i;
+        set(handles.a_edit,'String',alt);
+        set(handles.i_edit,'String',i);
+        handles = something_changed(hObject,handles);
+    end
+else
+    handles.a = a;
+end
+
+
 handles = something_changed(hObject,handles);
 guidata(hObject,handles)
 
@@ -741,7 +813,6 @@ handles.oz = r.*third;
 % hopefully imaginary numbers aren't a problem^
 
 
-disp('update sat orbit')
 
 % update handles w/ lat lon so that it can be graphed in outputs
 handles.lat = lat;
@@ -915,7 +986,6 @@ else
     
     set(handles.linegraph,'XData',cross_time,'YData',latties);
 end
-disp('updated lat time graph')
 
 
 
@@ -936,11 +1006,18 @@ handles.earthdays =0;
 
 handles.k=0; %restart loop
 
+set(handles.J2readout,'String',strcat('Using J2 = ',num2str(handles.J2)));
+
 guidata(hObject,handles)
 
 function handles = auto_callback(hObject, ~, handles)
 
 handles.mode = 1;
+
+set(handles.RAAN_edit,'Visible','off')
+set(handles.RAAN_string,'Visible','off')
+set(handles.perigee_edit,'Visible','off')
+set(handles.Perigee_string,'Visible','off')
 
 guidata(hObject,handles)
 
