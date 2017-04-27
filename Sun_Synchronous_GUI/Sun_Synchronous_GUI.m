@@ -63,7 +63,7 @@ guidata(hObject, handles);
 % UIWAIT makes sunsynch wait for user response (see UIRESUME)
 % uiwait(handles.figure1);
 
-set(gcf,'Name','Sun Synchronous Orbit Design');
+set(gcf,'Name','Sun Synchronous Orbit Design','CloseRequestFcn',@clothes);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%  Earth (Right) Axis  %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -90,7 +90,7 @@ handles = Draw_Planet(hObject,handles);
 
 % lighting the planet
 hold on
-light(handles.earth_axes,'Position',handles.light_pos,...
+handles.lighty = light(handles.earth_axes,'Position',handles.light_pos,...
     'Color','white','Style','infinite');
 set(handles.planet_surf,'AmbientStrength',.12,'SpecularStrength',.2,...
     'DiffuseStrength',1);
@@ -172,7 +172,7 @@ set(handles.solar_orb,'Parent',t2);
 
 
 % calculates lat and lon of sat orbit
-handles.num_P=1;
+handles.num_P=20;
 handles.dt=20;
 
 handles = Sat_orbit(hObject, handles);
@@ -198,7 +198,7 @@ axis(handles.earth_axes,'tight');
 handles = draw_orbital_plane(hObject,handles,1);
 
 % draw equator on planet
-handles = plot_equator(hObject,handles,1);
+handles = plot_equator_poles(hObject,handles,1);
 
 % view top down left axis
 view(handles.solar_axes,2)
@@ -231,7 +231,7 @@ xticks(handles.graph,[0 2 4 6 8 10 12 14 16 18 20 22 24])
 handles.k=0;
 % save handles
 guidata(hObject,handles)
-while handles.k <=length(handles.t)
+while ishandle(hObject) && handles.k <=length(handles.t)
     
     handles = guidata(hObject);
     handles.k = handles.k+1;
@@ -245,12 +245,12 @@ while handles.k <=length(handles.t)
     %leaving this bit in here in case i decide to plot a tail to the sat
     %(just add start:stop)
     % if beginning
-    if handles.k<handles.tail_length 
-        start=1;
-    % else if middle
-    else
-        start=start+1;
-    end
+%     if handles.k<handles.tail_length 
+%         start=1;
+%     % else if middle
+%     else
+%         start=start+1;
+%     end
     stop=handles.k;
     
     % plot satellite
@@ -275,7 +275,7 @@ while handles.k <=length(handles.t)
     newu1 = -arrowsize*sin(-handles.Omega_t(handles.k)+pi/4);
     newv1 = -arrowsize*cos(-handles.Omega_t(handles.k)+pi/4);
     
-    sun_angle = 23.5/180*pi;
+    sun_angle = handles.tilt/180*pi;
     rotm = [cos(sun_angle) 0 sin(sun_angle); 0 1 0; -sin(sun_angle) 0 cos(sun_angle)];
     answer = rotm*[newu1;newv1;0];
     newu = answer(1);
@@ -306,8 +306,16 @@ while handles.k <=length(handles.t)
         set(handles.eqtime_output,'String',str)
     end
     
+    % restart loop at the end
+    % at the close of figure, i set handles.k = length(handles.t)*2
+    if handles.k>=length(handles.yr)-1 && handles.k~=length(handles.t)*2
+        handles.k = 0;
+    end
+    
     % save handles
     guidata(hObject,handles)
+    
+    
 
     pause(.01)
     drawnow
@@ -334,10 +342,14 @@ function i_edit_Callback(hObject, ~, handles) %#ok<DEFNU>
 %        str2double(get(hObject,'String')) returns contents of scanrate_edit as a double
 i = str2double(get(hObject,'String'));
 
+if isinf(i) || isnan(i)
+    set(handles.errormsg,'String','Inclination input not valid')
 % if auto mode
-if handles.mode==1
+elseif handles.mode==1
+    % if successful input
+    set(handles.errormsg,'String','') % reset error message
     % if change inclination in auto mode, change a
-    %e = handles.e;
+    e = handles.e;
     i = deg2rad(i);
     J2 = handles.J2;
     R = handles.R;
@@ -345,23 +357,23 @@ if handles.mode==1
     dot_omega_planet = 2*pi/(handles.P_year*24*3600);
     
     % from SME SMAD equation for nodal precessoin
-    a = (-3/2*sqrt(mu)*J2*R^2*cos(i)/dot_omega_planet)^(2/7);
-    alt = (a-handles.R)/1000;
+    a = ((-3/2*sqrt(mu)*J2*R^2*cos(i)*(1-e^2)^(-2))/dot_omega_planet)^(2/7);
+    alt = (a-R)/1000;
     
-    % if alt doesn't work
-    if alt<0
+    
+    if alt<0 % if alt doesn't work
         % throw error message
         set(handles.errormsg,'String','Inclination not possible')
-    % if alt works
-    else
+    else % if alt works
         handles.a=a;
-        handles.i=i;
+        handles.i=rad2deg(i);
         set(handles.a_edit,'String',alt);
         handles = something_changed(hObject,handles);
     end
-else
+else % if not auto mode, successful input
     handles.i=i;
-    
+    handles = something_changed(hObject,handles);
+    set(handles.errormsg,'String','') % reset error message
 end
 
 
@@ -377,16 +389,18 @@ function a_edit_Callback(hObject, ~, handles) %#ok<DEFNU>
 alty = str2double(get(hObject,'String'));
 a = alty*1E3+handles.R;
 
+
+
 % if auto mode
 if handles.mode==1
     % if change alt in auto mode, change i
-    %e = handles.e;
+    e = handles.e;
     J2 = handles.J2;
     R = handles.R;
     mu = handles.mu;
     dot_omega_planet = 2*pi/(handles.P_year*24*3600);
     
-    expression = dot_omega_planet/(-3/2*sqrt(mu/a^3)*J2*(R/a)^2);
+    expression = dot_omega_planet/(-3/2*sqrt(mu/a^3)*J2*(R/a)^2*(1-e^2)^(-2));
     radi = acos(expression);
     i = rad2deg(radi);
     
@@ -400,8 +414,14 @@ if handles.mode==1
         set(handles.i_edit,'String',i);
         handles = something_changed(hObject,handles);
     end
+    
+% if manual mode
 else
-    handles.a = a;
+    if a<=handles.R
+        set(handles.errormsg,'String','Altitude not possible');
+    else
+        handles.a = a;
+    end
 end
 
 
@@ -416,7 +436,46 @@ function e_edit_Callback(hObject, ~, handles) %#ok<DEFNU>
 % Hints: get(hObject,'String') returns contents of scanrate_edit as text
 %        str2double(get(hObject,'String')) returns contents of scanrate_edit as a double
 e = str2double(get(hObject,'String'));
-handles.e = e;
+
+% if auto mode
+if handles.mode==1
+    % if change inclination in auto mode, change a
+    i = deg2rad(handles.i);
+    J2 = handles.J2;
+    R = handles.R;
+    mu = handles.mu;
+    dot_omega_planet = 2*pi/(handles.P_year*24*3600);
+    original_a = handles.a;
+    
+    % from SME SMAD equation for nodal precessoin
+    a = ((-3/2*sqrt(mu)*J2*R^2*cos(i)*(1-e^2)^(-2))/dot_omega_planet)^(2/7);
+    alt = (a-R)/1000;
+    
+    if alt<0 % if alt doesn't work
+        % throw error message
+        set(handles.errormsg,'String','Eccentricity not possible')
+    else % if alt works
+        handles.a=a;
+        handles.e=e;
+        set(handles.a_edit,'String',alt);
+        handles = something_changed(hObject,handles);
+        
+       if handles.r_vector < handles.R
+           set(handles.errormsg,'String','Eccentricity not possible')
+           handles.a = original_a;
+           handles = something_changed(hObject,handles);
+       end
+       
+    end
+else % if manual mode
+    if e<=1 && e>=0 % 
+        handles.e=e;
+    end
+        
+    handles = something_changed(hObject,handles);
+    
+end
+
 handles = something_changed(hObject,handles);
 guidata(hObject,handles)
 
@@ -468,8 +527,8 @@ set(handles.earth,'FaceColor',handles.colorz);
 handles = calculate_t(hObject,handles);
 % noon vector
 handles = draw_noon_vectorR(hObject,handles,0);
-% draw equator on planet
-handles = plot_equator(hObject,handles,0);
+% draw equator and poles on planet
+handles = plot_equator_poles(hObject,handles,0);
 
 % updates handles
 guidata(hObject,handles)
@@ -500,6 +559,7 @@ elseif planet == 1
     handles.name = 'mercury';
     handles.yr = 0:2*pi/handles.step:2*pi*20;
     handles.P_year = 88;
+    handles.tilt = 0.03/180*pi;
 elseif planet == 2
     % Venus
     handles.mu = 3.24859E14;
@@ -510,6 +570,7 @@ elseif planet == 2
     handles.name = 'venus';
     handles.yr = 0:-2*pi/handles.step:-2*pi*20;
     handles.P_year = 224.7;
+    handles.tilt = 2.64/180*pi;
 elseif planet == 4
     % Mars
     handles.mu = 4.282837e13;
@@ -520,6 +581,7 @@ elseif planet == 4
     handles.name = 'mars';
     handles.yr = 0:2*pi/handles.step:2*pi*20;
     handles.P_year = 686.93;
+    handles.tilt = 25.19/180*pi;
 elseif planet == 5
     % Jupiter
     handles.mu = 1.26686534E17;
@@ -530,6 +592,7 @@ elseif planet == 5
     handles.name = 'jupiter';
     handles.yr = 0:2*pi/handles.step:2*pi*20;
     handles.P_year = 11.86*365;
+    handles.tilt = 3.13/180*pi;
 elseif planet == 6
     % Saturn
     handles.mu = 3.7931187E16;
@@ -540,6 +603,7 @@ elseif planet == 6
     handles.name = 'saturn';
     handles.yr = 0:2*pi/handles.step:2*pi*20;
     handles.P_year = 10755;
+    handles.tilt = 26.73/180*pi;
 elseif planet == 7
     % Uranus
     handles.mu = 5.794e15;
@@ -550,6 +614,7 @@ elseif planet == 7
     handles.name = 'uranus';
     handles.yr = 0:2*pi/handles.step:2*pi*20;
     handles.P_year = 84*365;
+    handles.tilt = 82.23/180*pi;
 elseif planet ==8
     % Neptune
     handles.mu = 6.809e15;
@@ -560,6 +625,7 @@ elseif planet ==8
     handles.name = 'neptune';
     handles.yr = 0:2*pi/handles.step:2*pi*20;
     handles.P_year = 164*365;
+    handles.tilt = 28.32/180*pi;
 else
     %Pluto
     handles.mu = 8.71E11;
@@ -570,6 +636,7 @@ else
     handles.name = 'pluto';
     handles.yr = 0:2*pi/handles.step:2*pi*20;
     handles.P_year = 248*365;
+    handles.tilt = 57.47/180*pi;
 end
 updated_handles=handles;
 guidata(hObject,handles)
@@ -721,8 +788,8 @@ y = y*handles.R;
 z = z*handles.R;
 set(handles.planet_surf,'XData',x,'YData',y,'ZData',z,'CData',map);
 
-
-handles.light_pos = [-1 0 tan(handles.tilt)]; % tilt of the earth normalized
+magn = sqrt(1+tan(handles.tilt)^2)*.8;
+handles.light_pos = [-1/magn 0 tan(handles.tilt)/magn]; % tilt of the planet normalized
 % maybe change later for planets
 
 
@@ -737,7 +804,7 @@ e = handles.e;
 i = deg2rad(handles.i);
 Omega = deg2rad(handles.RAAN);
 v = 0;
-num_P = handles.num_P*20;
+num_P = handles.num_P;
 dt = handles.dt;
 mu = handles.mu;
 J2 = handles.J2;
@@ -800,7 +867,6 @@ first = cos(Omega_t).*cos(w+v_t) - sin(Omega_t).*sin(w+v_t).*cos(i);
 second = sin(Omega_t).*cos(w+v_t) + cos(Omega_t).*sin(w+v_t).*cos(i);
 third = sin(w+v_t).*sin(i);
 
-
 % conversion to latitude longitude from rotation matrix
 lat = rad2deg(asin(third));
 longi = rad2deg( acos(first./cos(deg2rad(lat))) );
@@ -809,7 +875,7 @@ lon = longi .* sign(second);
 handles.ox = r.*first;
 handles.oy = r.*second;
 handles.oz = r.*third;
-
+handles.r_vector = r;
 % hopefully imaginary numbers aren't a problem^
 
 
@@ -882,7 +948,8 @@ function handles = calculate_t(hObject,handles)
 %time has to be recalculated for each planet selection
 
 % time 
-handles.t = 0:handles.dt:round(20*handles.num_P*handles.P);
+
+handles.t = 0:handles.dt:round(handles.num_P*handles.P);
 
 
 % tail_length is one orbit length of indeces 
@@ -907,11 +974,11 @@ y = handles.oy(index);
 an = [x y 0];
 
 
-angle = atan2(norm(cross(an,n)),dot(an,n)) *180/pi;
+handles.hourangle = atan2(norm(cross(an,n)),dot(an,n)) *180/pi;
 
 % convert that angle to time
 % 6 hours corresponds to 90 degrees i think
-first_hr = angle*6/90;
+first_hr = handles.hourangle*6/90;
 
 if y<handles.light_pos(2)*handles.R*1.5
    first_hr = 24-first_hr;
@@ -919,6 +986,8 @@ end
 
 
 eqtime = first_hr;
+
+guidata(hObject,handles)
 
 
 function handles = draw_noon_vectorR(hObject, handles,first)
@@ -935,7 +1004,7 @@ end
 
 guidata(hObject,handles)
 
-function handles = plot_equator(hObject,handles,first)
+function handles = plot_equator_poles(hObject,handles,first)
 % plots equator on right axis
 long = -180:10:180;
 lat = zeros(size(long));
@@ -944,17 +1013,25 @@ alt = zeros(size(long));
 planet = referenceEllipsoid(handles.name,'m');
 [x,y,z] = geodetic2ecef(planet,lat,long,alt);
 
+zpole = -handles.R*1.25:handles.R/10:handles.R*1.25;
+xpole = zeros(size(zpole));
+ypole = zeros(size(zpole));
+
 hold on
 
 if first ==1
     handles.equator = plot3(handles.earth_axes,x,y,z,'--','Color','m');
+    handles.pole = plot3(handles.earth_axes,xpole,ypole,zpole,'Color','b');
 else
-    set(handles.equator,'XData',x,'ydata',y,'zdata',z)
+    set(handles.equator,'XData',x,'ydata',y,'zdata',z);
+    set(handles.pole,'XData',xpole,'ydata',ypole,'zdata',zpole)
 end
 
 
 
 guidata(hObject,handles)
+
+
 
 function handles = plot_lat_MLTAN(hObject,handles,first)
 % plots or updates the plot of lat/lon crossing time graph
@@ -1006,18 +1083,22 @@ handles.earthdays =0;
 
 handles.k=0; %restart loop
 
-set(handles.J2readout,'String',strcat('Using J2 = ',num2str(handles.J2)));
+set(handles.J2readout,'String',strcat('Using J2 = ',num2str(handles.J2))); %display J2
+
+
+
+%
+
+% change light
+magn = sqrt(1+tan(handles.tilt)^2)*.8;
+handles.light_pos = [-1/magn 0 tan(handles.tilt)/magn]; % tilt of the planet normalized
+set(handles.lighty,'Position',handles.light_pos);
 
 guidata(hObject,handles)
 
 function handles = auto_callback(hObject, ~, handles)
 
 handles.mode = 1;
-
-set(handles.RAAN_edit,'Visible','off')
-set(handles.RAAN_string,'Visible','off')
-set(handles.perigee_edit,'Visible','off')
-set(handles.Perigee_string,'Visible','off')
 
 guidata(hObject,handles)
 
@@ -1027,4 +1108,22 @@ handles.mode = 0;
 
 guidata(hObject,handles)
 
+function clothes(src,callbackdata)
+%handles.k = length(handles.t)*2;
+% delete(hObject);
+
+delete(gcf)
+
+function calculate_eclipse(hObject,~,handles)
+
+j = handles.i-pi/2;
+
+H = handles.hourangle;
+
+delta = handles.hourangle/180*pi;
+
+K = cos(delta+j);
+
+
+guidata(hObject,handles)
 
