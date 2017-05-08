@@ -71,6 +71,7 @@ set(gcf,'Name','Sun Synchronous Orbit Design','CloseRequestFcn',@clothes);
 handles.planet = get(handles.planet_selection,'Value');
 handles.step = 200;
 handles.earthdays=0;
+handles.righttime=0;
 handles = Update_Planet_Constants(hObject,handles);
 % Draw Planet on Right Axis
 
@@ -272,14 +273,24 @@ while ishandle(hObject) && handles.k <=length(handles.t)
     % the pi/4 offset is because the noon vector does not line up with the
     % axis. noon vector is [-5 -5]
 %     angle = (-handles.Omega_t(handles.k)+pi/4)*180/pi;
-    newu1 = -arrowsize*sin(-handles.Omega_t(handles.k)+pi/4);
-    newv1 = -arrowsize*cos(-handles.Omega_t(handles.k)+pi/4);
+%     newu1 = -arrowsize*sin(-handles.Omega_t(handles.k)+pi/4);
+%     newv1 = -arrowsize*cos(-handles.Omega_t(handles.k)+pi/4);
     
+%     earthpos = [28.5*cos(n2+pi/4) 28.5*sin(n2+pi/4)];
+% % %     plot(handles.solar_axes,earthpos(1),earthpos(2),'.','MarkerSize',40)
+    
+
+    newu1=handles.year_x(stop);
+    newv1=handles.year_y(stop);
+
     sun_angle = handles.tilt/180*pi;
     rotm = [cos(sun_angle) 0 sin(sun_angle); 0 1 0; -sin(sun_angle) 0 cos(sun_angle)];
     answer = rotm*[newu1;newv1;0];
-    newu = answer(1);
-    newv = answer(2);
+    magn = sqrt(answer(1)^2+answer(2)^2);
+    newu = answer(1)/magn*arrowsize;
+    newv = answer(2)/magn*arrowsize;
+
+
     
     set(handles.solar_orb,'UData',newu,'VData',newv);
     
@@ -291,6 +302,17 @@ while ishandle(hObject) && handles.k <=length(handles.t)
         str = ['Earth Years Passed ',num2str(round(handles.earthdays/365,1))];
     end
     set(handles.left_day,'String',str)
+    
+    
+    % add a string for right axis
+    handles.righttime = handles.righttime+handles.P/handles.step;
+    if handles.righttime < 3600
+        str2 = ['Minutes Passed ',num2str(round(handles.righttime/60))];
+    else
+        str2 = ['Hours Passed ',num2str(round(handles.righttime/3600,1))];
+    end
+    set(handles.righttime_text,'String',str2)
+    
     
     %output
     
@@ -387,43 +409,52 @@ function a_edit_Callback(hObject, ~, handles) %#ok<DEFNU>
 % Hints: get(hObject,'String') returns contents of scanrate_edit as text
 %        str2double(get(hObject,'String')) returns contents of scanrate_edit as a double
 alty = str2double(get(hObject,'String'));
-a = alty*1E3+handles.R;
 
-
-
-% if auto mode
-if handles.mode==1
-    % if change alt in auto mode, change i
-    e = handles.e;
-    J2 = handles.J2;
-    R = handles.R;
-    mu = handles.mu;
-    dot_omega_planet = 2*pi/(handles.P_year*24*3600);
-    
-    expression = dot_omega_planet/(-3/2*sqrt(mu/a^3)*J2*(R/a)^2*(1-e^2)^(-2));
-    radi = acos(expression);
-    i = rad2deg(radi);
-    
-    alt = (a-handles.R)/1000;
-    if alt<0
-        set(handles.errormsg,'String','Altitude not possible')
-    else
-        handles.a=a;
-        handles.i=i;
-        set(handles.a_edit,'String',alt);
-        set(handles.i_edit,'String',i);
-        handles = something_changed(hObject,handles);
-    end
-    
-% if manual mode
+%check for valid input
+if isinf(alty) || isnan(alty)
+    set(handles.errormsg,'String','Altitude input not valid')
 else
-    if a<=handles.R
-        set(handles.errormsg,'String','Altitude not possible');
+    % semi major axis
+    a = alty*1E3+handles.R;
+
+    %check for valid semi major axis
+    if a<handles.R || a*(1-handles.e)<handles.R
+        set(handles.errormsg,'String','Altitude not possible') % reset error message
+    % if auto mode
+    elseif handles.mode==1
+        % if change alt in auto mode, change i
+        e = handles.e;
+        J2 = handles.J2;
+        R = handles.R;
+        mu = handles.mu;
+        dot_omega_planet = 2*pi/(handles.P_year*24*3600);
+
+        expression = dot_omega_planet/(-3/2*sqrt(mu/a^3)*J2*(R/a)^2*(1-e^2)^(-2));
+        radi = acos(expression);
+        i = rad2deg(radi);
+
+        alt = (a-handles.R)/1000;
+        if alt<0
+            set(handles.errormsg,'String','Altitude not possible')
+        else
+            set(handles.errormsg,'String','') % reset error message
+            handles.a=a;
+            handles.i=i;
+            set(handles.a_edit,'String',alt);
+            set(handles.i_edit,'String',i);
+            handles = something_changed(hObject,handles);
+        end
+
+    % if manual mode
     else
-        handles.a = a;
+        if a<=handles.R
+            set(handles.errormsg,'String','Altitude not possible');
+        else
+            set(handles.errormsg,'String','') % reset error message
+            handles.a = a;
+        end
     end
 end
-
 
 handles = something_changed(hObject,handles);
 guidata(hObject,handles)
@@ -437,44 +468,49 @@ function e_edit_Callback(hObject, ~, handles) %#ok<DEFNU>
 %        str2double(get(hObject,'String')) returns contents of scanrate_edit as a double
 e = str2double(get(hObject,'String'));
 
-% if auto mode
-if handles.mode==1
-    % if change inclination in auto mode, change a
-    i = deg2rad(handles.i);
-    J2 = handles.J2;
-    R = handles.R;
-    mu = handles.mu;
-    dot_omega_planet = 2*pi/(handles.P_year*24*3600);
-    original_a = handles.a;
-    
-    % from SME SMAD equation for nodal precessoin
-    a = ((-3/2*sqrt(mu)*J2*R^2*cos(i)*(1-e^2)^(-2))/dot_omega_planet)^(2/7);
-    alt = (a-R)/1000;
-    
-    if alt<0 % if alt doesn't work
-        % throw error message
-        set(handles.errormsg,'String','Eccentricity not possible')
-    else % if alt works
-        handles.a=a;
+if isinf(e) || isnan(e)
+    set(handles.errormsg,'String','Eccentricity input not valid')
+elseif e>1 || e<0
+    set(handles.errormsg,'String','Eccentricity input must be >0 and <1')
+elseif (handles.a*(1-e)) < handles.R+100
+    set(handles.errormsg,'String','Eccentricity input not possible')
+else
+    set(handles.errormsg,'String','') % reset error message
+    % if auto mode
+    if handles.mode==1
+        % if change inclination in auto mode, change a
+        i = deg2rad(handles.i);
+        J2 = handles.J2;
+        R = handles.R;
+        mu = handles.mu;
+        dot_omega_planet = 2*pi/(handles.P_year*24*3600);
+        original_a = handles.a;
+
+        % from SME SMAD equation for nodal precessoin
+        a = ((-3/2*sqrt(mu)*J2*R^2*cos(i)*(1-e^2)^(-2))/dot_omega_planet)^(2/7);
+        alt = (a-R)/1000;
+
+        if alt<0 % if alt doesn't work
+            % throw error message
+            set(handles.errormsg,'String','Eccentricity not possible')
+        else % if alt works
+            handles.a=a;
+            handles.e=e;
+            set(handles.a_edit,'String',alt);
+            handles = something_changed(hObject,handles);
+
+           if handles.r_vector < handles.R
+               set(handles.errormsg,'String','Eccentricity not possible')
+               handles.a = original_a;
+               handles = something_changed(hObject,handles);
+           end
+
+        end
+    else % if manual mode
         handles.e=e;
-        set(handles.a_edit,'String',alt);
-        handles = something_changed(hObject,handles);
-        
-       if handles.r_vector < handles.R
-           set(handles.errormsg,'String','Eccentricity not possible')
-           handles.a = original_a;
-           handles = something_changed(hObject,handles);
-       end
-       
     end
-else % if manual mode
-    if e<=1 && e>=0 % 
-        handles.e=e;
-    end
-        
-    handles = something_changed(hObject,handles);
-    
 end
+
 
 handles = something_changed(hObject,handles);
 guidata(hObject,handles)
@@ -514,6 +550,7 @@ function Planet_Selection_Callback(hObject, eventdata, handles)
 index_selected = get(hObject,'Value');
 handles.planet = index_selected;
 handles.earthdays = 0;
+handles.righttime=0;
 handles = Update_Planet_Constants(hObject,handles);
 handles = Draw_Planet(hObject,handles);
 
@@ -892,16 +929,28 @@ function handles = yearly_sat_orbit(hObject,handles)
 a = handles.a;
 e = handles.e;
 i = deg2rad(handles.i);
-Omega = deg2rad(handles.RAAN);
+Omega = deg2rad(handles.RAAN)+225*pi/180;
 J2 = handles.J2;
 R = handles.R;
 mu = handles.mu;
+w = deg2rad(handles.w);
 
-year_t = 0:3600*24:3600*24*365*20;
+% year_t = 0:3600*24:3600*24*365*20;
 
 
 % Mean motion
 n = sqrt(mu/a^3);
+
+P = 2*pi/n;
+
+year_t=0:P:3600*24*365*20;
+
+v=0;
+% Eccentric anomoly
+E = 2*atan( sqrt((1-e)/(1+e)) * tan(v/2) );
+
+% Initial mean anomoly
+Mo = E - e*sin(E);
 
 % RAAN
 dot_omega = 3/2*(1-e^2)^2*n*J2*(R/a)^2*cos(i);
@@ -913,16 +962,38 @@ dot_omega_earth = 2*pi/(handles.P_year*24*3600);
 
 
 % initialize time dependent vectors before theyre assigned in loop
-handles.Omega_t = zeros(size(year_t));
+%handles.Omega_t = zeros(size(year_t));
+Omega_t = zeros(size(year_t));
+M_t = zeros(size(year_t));
+v_t = zeros(size(year_t));
 
 
 
 for j=1:length(year_t)
+    % Mean anomoly [rad]
+   M_t(j) = Mo + n*year_t(j);
+   
+   % True anomoly [rad]
+   v_t(j) = M_t(j) + (2*e - e^3/4+e^5*e^5/96).*sin(M_t(j));
+   
    % time dependent RAAN
-   handles.Omega_t(j) = Omega+(dot_omega*year_t(j))+dot_omega_earth*year_t(j);
+   %handles.Omega_t(j) = Omega+(dot_omega*year_t(j))+dot_omega_earth*year_t(j);
+  Omega_t(j) = Omega+(dot_omega*year_t(j))+dot_omega_earth*year_t(j);
+%   Omega_t(j) = Omega+(dot_omega*year_t(j));
    
 end
 
+% orbital radius vector
+r = a.*(1-e^2)./(1+e.*cos(v_t));
+
+% rotation matrix divided into rows
+first = cos(Omega_t).*cos(w+v_t) - sin(Omega_t).*sin(w+v_t).*cos(i);
+second = sin(Omega_t).*cos(w+v_t) + cos(Omega_t).*sin(w+v_t).*cos(i);
+third = sin(w+v_t).*sin(i);
+
+handles.year_x = r.*first;
+handles.year_y = r.*second;
+handles.year_z = r.*third;
 
 
 guidata(hObject,handles)
@@ -974,7 +1045,12 @@ y = handles.oy(index);
 an = [x y 0];
 
 
-handles.hourangle = atan2(norm(cross(an,n)),dot(an,n)) *180/pi;
+try
+    handles.hourangle = atan2(norm(cross(an,n)),dot(an,n)) *180/pi;
+catch
+    set(handles.errormsg,'String','Problem with hour angle') % reset error message
+    handles.hourangle = 90;
+end
 
 % convert that angle to time
 % 6 hours corresponds to 90 degrees i think
@@ -1080,6 +1156,8 @@ handles = calculate_t(hObject,handles);
 handles = yearly_sat_orbit(hObject,handles);
 
 handles.earthdays =0;
+
+handles.righttime=0;
 
 handles.k=0; %restart loop
 
