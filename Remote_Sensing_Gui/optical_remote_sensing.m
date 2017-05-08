@@ -137,19 +137,18 @@ plot(leg,1,1,'sk','MarkerFaceColor','k','MarkerSize',20)
 
 %setting up map info
 nasa = wmsfind('nasa','SearchField','serverurl');
-layer = nasa.refine('bluemarbleng','SearchField','layername','MatchType','exact');
-[A,R] = wmsread(layer);
+layer = nasa.refine('bluemarble','SearchField','layername');
+[A,R] = wmsread(layer(14));
 
-A= (A+30)*1.5;
-A_orig = A;
-handles.A_orig = A_orig;
-handles.R = R;
-%    C = (A+30)*1.5;
-C=A;
-C(:,:,2) = C(:,:,1)+100;
 
-handles.C = C;
-%    C(:,:,3) = C(:,:,3)+80;
+% A= (A+30)*1.5;
+% A_orig = A;
+% handles.A_orig = A_orig;
+% handles.R = R;
+% C=A;
+% C(:,:,2) = C(:,:,1)+100;
+% 
+% handles.C = C;
 
 % globe on new axis
 earth = referenceEllipsoid('earth','m');
@@ -652,10 +651,10 @@ if hObject.Value == 1
     % could be changed later
     num_P = 1;
     % calculates lat and lon of 10 orbital periods
-    [lat, lon, alt, P,vel] = Sat_orbit( a,e,i,RAAN,anom,w,10*num_P,0,dt,3);
+    [lat, lon, alt, P,vel] = Sat_orbit( a,e,i,RAAN,anom,w,10*num_P,0,dt);
     
     % calculate longitude, latitude of groundtrack. alt, P, v not used
-    [latg, long] = Sat_orbit( a,e,i,RAAN,anom,w,10*num_P,1,dt,3);
+    [latg, long] = Sat_orbit( a,e,i,RAAN,anom,w,10*num_P,1,dt);
    
     % spatial resolution
     del_xprime = 1.22*h*lambda/D;
