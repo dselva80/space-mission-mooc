@@ -223,7 +223,9 @@ set(get(handles.graph, 'ylabel'),'String','Lattitude [deg]');
 xlim(handles.graph,[0 24]);
 ylim(handles.graph,[-90 90]);
 % x y ticks
-xticks(handles.graph,[0 2 4 6 8 10 12 14 16 18 20 22 24])
+set(handles.graph,'Xtick',[0 2 4 6 8 10 12 14 16 18 20 22 24])
+% this line below only works for 2017
+% xticks(handles.graph,[0 2 4 6 8 10 12 14 16 18 20 22 24])
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%% Animation Loop  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%
