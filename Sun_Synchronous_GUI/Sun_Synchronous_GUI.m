@@ -18,6 +18,12 @@ function varargout = Sun_Synchronous_GUI(varargin)
 %      *See GUI Options on GUIDE's Tools menu.  Choose "GUI allows only one
 %      instance to run (singleton)".
 %
+%       Sun synchronous GUI demonstrates sun synchronous orbits. In manual
+%       mode, the user made edit any of the orbit parameters and the orbit
+%       will be displayed. In auto mode, when the user adjusts the orbit
+%       parameters the GUI will automatically adjust the orbit to be sun
+%       synchronous
+%
 % See also: GUIDE, GUIDATA, GUIHANDLES
 
 % Edit the above text to modify the response to help sunsynch
@@ -383,9 +389,10 @@ elseif handles.mode==1
     % from SME SMAD equation for nodal precessoin
     a = ((-3/2*sqrt(mu)*J2*R^2*cos(i)*(1-e^2)^(-2))/dot_omega_planet)^(2/7);
     alt = (a-R)/1000;
+    rmin = a*(1-e);
     
     
-    if alt<0 % if alt doesn't work
+    if rmin<=handles.R || isreal(a)==0 % if alt doesn't work
         % throw error message
         set(handles.errormsg,'String','Inclination not possible')
     else % if alt works
@@ -410,21 +417,29 @@ function a_edit_Callback(hObject, ~, handles) %#ok<DEFNU>
 
 % Hints: get(hObject,'String') returns contents of scanrate_edit as text
 %        str2double(get(hObject,'String')) returns contents of scanrate_edit as a double
+% 
+% This function is called when the minimum altitude field is edited.
+% This function checks the validity of the input and updates the corresponding satellite
+% orbit variable, semi-major axis, in the handles structure.
+% Orbit is recalcaulted and displayed.
+
+
 alty = str2double(get(hObject,'String'));
 
 %check for valid input
 if isinf(alty) || isnan(alty)
     set(handles.errormsg,'String','Altitude input not valid')
 else
-    % semi major axis
-    a = alty*1E3+handles.R;
+    % semi major axis minimum if eccentric
+    rmin = (alty*1E3+handles.R);
+    a = rmin/(1-handles.e);
 
     %check for valid semi major axis
-    if a<handles.R || a*(1-handles.e)<handles.R
+    if rmin<=handles.R 
         set(handles.errormsg,'String','Altitude not possible') % reset error message
     % if auto mode
     elseif handles.mode==1
-        % if change alt in auto mode, change i
+%         % if change alt in auto mode, change i
         e = handles.e;
         J2 = handles.J2;
         R = handles.R;
@@ -436,7 +451,7 @@ else
         i = rad2deg(radi);
 
         alt = (a-handles.R)/1000;
-        if alt<0
+        if alt<0 || isreal(i)==0
             set(handles.errormsg,'String','Altitude not possible')
         else
             set(handles.errormsg,'String','') % reset error message
@@ -446,6 +461,7 @@ else
             set(handles.i_edit,'String',i);
             handles = something_changed(hObject,handles);
         end
+%         end
 
     % if manual mode
     else
@@ -474,7 +490,7 @@ if isinf(e) || isnan(e)
     set(handles.errormsg,'String','Eccentricity input not valid')
 elseif e>1 || e<0
     set(handles.errormsg,'String','Eccentricity input must be >0 and <1')
-elseif (handles.a*(1-e)) < handles.R+100
+elseif (handles.a*(1-e)) <= handles.R
     set(handles.errormsg,'String','Eccentricity input not possible')
 else
     set(handles.errormsg,'String','') % reset error message
@@ -490,9 +506,9 @@ else
 
         % from SME SMAD equation for nodal precessoin
         a = ((-3/2*sqrt(mu)*J2*R^2*cos(i)*(1-e^2)^(-2))/dot_omega_planet)^(2/7);
-        alt = (a-R)/1000;
+        alt = (a*(1-e)-R)/1000;
 
-        if alt<0 % if alt doesn't work
+        if alt<0 || isreal(a)==0% if alt doesn't work
             % throw error message
             set(handles.errormsg,'String','Eccentricity not possible')
         else % if alt works
@@ -568,6 +584,16 @@ handles = calculate_t(hObject,handles);
 handles = draw_noon_vectorR(hObject,handles,0);
 % draw equator and poles on planet
 handles = plot_equator_poles(hObject,handles,0);
+
+if handles.mode==1
+    if handles.J2 <= 0.000027
+        set(handles.impossible_edit,'String','Sun synchronous orbit is not possible for this planet')
+    else
+        set(handles.impossible_edit','String','')
+    end
+else
+    set(handles.impossible_edit','String','')
+end
 
 % updates handles
 guidata(hObject,handles)
@@ -677,6 +703,12 @@ else
     handles.P_year = 248*365;
     handles.tilt = 57.47/180*pi;
 end
+
+% change default altitude based on planet
+handles.a = handles.R*1.5;
+set(handles.a_edit,'String',round((handles.a-handles.R)/1E3));
+
+
 updated_handles=handles;
 guidata(hObject,handles)
 
@@ -1045,25 +1077,31 @@ n = [u v 0];
 x = handles.ox(index);
 y = handles.oy(index);
 an = [x y 0];
-
+iserror=0;
 
 try
     handles.hourangle = atan2(norm(cross(an,n)),dot(an,n)) *180/pi;
 catch
+    iserror=1;
     set(handles.errormsg,'String','Problem with hour angle') % reset error message
-    handles.hourangle = 90;
 end
 
-% convert that angle to time
-% 6 hours corresponds to 90 degrees i think
-first_hr = handles.hourangle*6/90;
+if iserror==0
+    % convert that angle to time
+    % 6 hours corresponds to 90 degrees i think
+    first_hr = handles.hourangle*6/90;
 
-if y<handles.light_pos(2)*handles.R*1.5
-   first_hr = 24-first_hr;
+    if y<handles.light_pos(2)*handles.R*1.5
+       first_hr = 24-first_hr;
+    end
+
+
+    eqtime = first_hr;
+else
+    eqtime=0;
 end
 
 
-eqtime = first_hr;
 
 guidata(hObject,handles)
 
@@ -1180,11 +1218,50 @@ function handles = auto_callback(hObject, ~, handles)
 
 handles.mode = 1;
 
+i = str2double(get(handles.i_edit,'String'));
+
+if isinf(i) || isnan(i)
+    set(handles.errormsg,'String','Inclination input not valid')
+% if auto mode
+elseif handles.mode==1
+    % if successful input
+    set(handles.errormsg,'String','') % reset error message
+    % if change inclination in auto mode, change a
+    e = handles.e;
+    i = deg2rad(i);
+    J2 = handles.J2;
+    R = handles.R;
+    mu = handles.mu;
+    dot_omega_planet = 2*pi/(handles.P_year*24*3600);
+    
+    % from SME SMAD equation for nodal precessoin
+    a = ((-3/2*sqrt(mu)*J2*R^2*cos(i)*(1-e^2)^(-2))/dot_omega_planet)^(2/7);
+    alt = (a-R)/1000;
+    rmin = a*(1-e);
+    
+    
+    if rmin<=handles.R || isreal(a)==0 % if alt doesn't work
+        % throw error message
+        set(handles.errormsg,'String','Inclination not possible')
+    else % if alt works
+        handles.a=a;
+        handles.i=rad2deg(i);
+        set(handles.a_edit,'String',alt);
+        handles = something_changed(hObject,handles);
+    end
+else % if not auto mode, successful input
+    handles.i=i;
+    handles = something_changed(hObject,handles);
+    set(handles.errormsg,'String','') % reset error message
+end
+
+
 guidata(hObject,handles)
 
 function handles = manual_callback(hObject, ~, handles)
 
 handles.mode = 0;
+set(handles.impossible_edit','String','')
 
 guidata(hObject,handles)
 
@@ -1198,7 +1275,7 @@ function calculate_eclipse(hObject,~,handles)
 
 j = handles.i-pi/2;
 
-H = handles.hourangle;
+H = handles.hourangle;i
 
 delta = handles.hourangle/180*pi;
 

@@ -138,7 +138,7 @@ plot(leg,1,1,'sk','MarkerFaceColor','k','MarkerSize',20)
 %setting up map info
 nasa = wmsfind('nasa','SearchField','serverurl');
 layer = nasa.refine('bluemarble','SearchField','layername');
-[A,R] = wmsread(layer(14));
+[A,R] = wmsread(layer(11));
 
 
 % A= (A+30)*1.5;
