@@ -371,8 +371,10 @@ function i_edit_Callback(hObject, ~, handles) %#ok<DEFNU>
 % Hints: get(hObject,'String') returns contents of scanrate_edit as text
 %        str2double(get(hObject,'String')) returns contents of scanrate_edit as a double
 i = str2double(get(hObject,'String'));
+old_i = handles.i;
 
 if isinf(i) || isnan(i)
+    set(handles.i_edit,'String',num2str(old_i)) % put old i back in input box
     set(handles.errormsg,'String','Inclination input not valid')
 % if auto mode
 elseif handles.mode==1
@@ -395,6 +397,7 @@ elseif handles.mode==1
     if rmin<=handles.R || isreal(a)==0 % if alt doesn't work
         % throw error message
         set(handles.errormsg,'String','Inclination not possible')
+        set(handles.i_edit,'String',num2str(old_i)) % put old i back in input box
     else % if alt works
         handles.a=a;
         handles.i=rad2deg(i);
@@ -425,18 +428,21 @@ function a_edit_Callback(hObject, ~, handles) %#ok<DEFNU>
 
 
 alty = str2double(get(hObject,'String'));
+old_alty = (handles.a*(1-handles.e)-handles.R)/1e3;
 
 %check for valid input
 if isinf(alty) || isnan(alty)
-    set(handles.errormsg,'String','Altitude input not valid')
+    set(handles.a_edit,'String',num2str(old_alty)) % put old alt back in box
+    set(handles.errormsg,'String','Altitude input not valid') %error msg
 else
     % semi major axis minimum if eccentric
     rmin = (alty*1E3+handles.R);
     a = rmin/(1-handles.e);
-
+    
     %check for valid semi major axis
     if rmin<=handles.R 
-        set(handles.errormsg,'String','Altitude not possible') % reset error message
+        set(handles.a_edit,'String',num2str(old_alty)) % put old alt back in input box
+        set(handles.errormsg,'String','Altitude not possible') % error message
     % if auto mode
     elseif handles.mode==1
 %         % if change alt in auto mode, change i
@@ -450,14 +456,13 @@ else
         radi = acos(expression);
         i = rad2deg(radi);
 
-        alt = (a-handles.R)/1000;
-        if alt<0 || isreal(i)==0
-            set(handles.errormsg,'String','Altitude not possible')
+        if isreal(i)==0 % if i is imaginary
+            set(handles.a_edit,'String',num2str(old_alty)) % put old alt back in input box
+            set(handles.errormsg,'String','Altitude not possible') % error msg
         else
             set(handles.errormsg,'String','') % reset error message
-            handles.a=a;
             handles.i=i;
-            set(handles.a_edit,'String',alt);
+            handles.a=a;
             set(handles.i_edit,'String',i);
             handles = something_changed(hObject,handles);
         end
@@ -465,12 +470,8 @@ else
 
     % if manual mode
     else
-        if a<=handles.R
-            set(handles.errormsg,'String','Altitude not possible');
-        else
-            set(handles.errormsg,'String','') % reset error message
-            handles.a = a;
-        end
+        set(handles.errormsg,'String','') % reset error message
+        handles.a = a;
     end
 end
 
@@ -485,12 +486,16 @@ function e_edit_Callback(hObject, ~, handles) %#ok<DEFNU>
 % Hints: get(hObject,'String') returns contents of scanrate_edit as text
 %        str2double(get(hObject,'String')) returns contents of scanrate_edit as a double
 e = str2double(get(hObject,'String'));
+old_e =handles.e;
 
 if isinf(e) || isnan(e)
+    set(handles.e_edit,'String',num2str(old_e)) % put old e back in input box
     set(handles.errormsg,'String','Eccentricity input not valid')
 elseif e>1 || e<0
+    set(handles.e_edit,'String',num2str(old_e)) % put old e back in input box
     set(handles.errormsg,'String','Eccentricity input must be >0 and <1')
 elseif (handles.a*(1-e)) <= handles.R
+    set(handles.e_edit,'String',num2str(old_e)) % put old e back in input box
     set(handles.errormsg,'String','Eccentricity input not possible')
 else
     set(handles.errormsg,'String','') % reset error message
@@ -510,6 +515,7 @@ else
 
         if alt<0 || isreal(a)==0% if alt doesn't work
             % throw error message
+            set(handles.e_edit,'String',num2str(old_e)) % put old e back in input box
             set(handles.errormsg,'String','Eccentricity not possible')
         else % if alt works
             handles.a=a;
@@ -518,6 +524,7 @@ else
             handles = something_changed(hObject,handles);
 
            if handles.r_vector < handles.R
+               set(handles.e_edit,'String',num2str(old_e)) % put old e back in input box
                set(handles.errormsg,'String','Eccentricity not possible')
                handles.a = original_a;
                handles = something_changed(hObject,handles);
@@ -1271,16 +1278,5 @@ function clothes(src,callbackdata)
 
 delete(gcf)
 
-function calculate_eclipse(hObject,~,handles)
 
-j = handles.i-pi/2;
-
-H = handles.hourangle;i
-
-delta = handles.hourangle/180*pi;
-
-K = cos(delta+j);
-
-
-guidata(hObject,handles)
 
